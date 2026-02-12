@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
+import Alert from "../../ui/Alert";
 import {
   User,
   Mail,
@@ -29,21 +30,34 @@ export default function RegisterForm() {
     formState: { errors },
   } = useForm();
 
+  const [formAlert, setFormAlert] = React.useState(null);
+
   const mutation = useMutation({
     mutationFn: async (data) => {
       const res = await axios.post("/api/register", data);
       return res.data;
     },
     onSuccess: () => {
-      alert("Account created successfully!");
-      router.push("/login");
+      setFormAlert({
+        variant: "success",
+        title: "Account created",
+        message: "Your account is ready. Redirecting to sign in...",
+      });
+      setTimeout(() => {
+        router.push("/login");
+      }, 1100);
     },
     onError: (error) => {
-      alert(error.response?.data?.message || "Something went wrong");
+      setFormAlert({
+        variant: "error",
+        title: "Registration failed",
+        message: error.response?.data?.message || "Something went wrong",
+      });
     },
   });
 
   const onSubmit = (data) => {
+    setFormAlert(null);
     mutation.mutate(data);
   };
 
@@ -101,6 +115,15 @@ export default function RegisterForm() {
           <p className="mt-2 text-sm text-[#4B4B4B]">
             Create categories, define services, and start booking clients.
           </p>
+          {formAlert ? (
+            <Alert
+              className="mt-5"
+              variant={formAlert.variant}
+              title={formAlert.title}
+              message={formAlert.message}
+              onClose={() => setFormAlert(null)}
+            />
+          ) : null}
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
             <div className="grid gap-3 sm:grid-cols-2">

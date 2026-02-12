@@ -20,6 +20,10 @@ export async function POST(req) {
 
   const hashedPassword = await bcrypt.hash(body.password, 10);
 
+  const clientRole = await db.query.roles.findFirst({
+    where: eq(roles.name, "client")
+  });
+
   await db.insert(users).values({
     firstName: body.firstname,
     lastName: body.lastname,
@@ -27,6 +31,7 @@ export async function POST(req) {
     email: body.email,
     password: hashedPassword,
     phone: body.phone,
+    roleId: clientRole.id
   });
 
   return NextResponse.json({ message: "User created" });

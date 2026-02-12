@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import Button from "../../ui/Button";
 import ProfileDropdown from "../../ui/ProfileDropdown";
@@ -12,7 +11,7 @@ export default function HomeNavbar({ session }) {
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         <Link
           href="/"
-          className="font-[var(--font-display)] text-lg font-semibold tracking-tight"
+          className="text-lg font-semibold tracking-tight"
         >
           Appointly
         </Link>

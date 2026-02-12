@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
+import Alert from "../../ui/Alert";
 import {
   Mail,
   Lock,
@@ -25,8 +26,10 @@ export default function LoginForm() {
   } = useForm();
 
   const [loading, setLoading] = React.useState(false);
+  const [formAlert, setFormAlert] = React.useState(null);
 
   const onSubmit = async (data) => {
+    setFormAlert(null);
     setLoading(true);
     try {
       const result = await signIn("credentials", {
@@ -35,15 +38,29 @@ export default function LoginForm() {
         password: data.password,
       });
 
-      if (result.error) {
-        alert(result.error);
+      if (result?.error) {
+        setFormAlert({
+          variant: "error",
+          title: "Sign in failed",
+          message: result.error,
+        });
       } else {
-        alert("Logged in successfully!");
-        router.push("/");
-        router.refresh();
+        setFormAlert({
+          variant: "success",
+          title: "Signed in",
+          message: "You're now signed in. Redirecting...",
+        });
+        setTimeout(() => {
+          router.push("/");
+          router.refresh();
+        }, 900);
       }
     } catch (error) {
-      alert("Something went wrong");
+      setFormAlert({
+        variant: "error",
+        title: "Something went wrong",
+        message: "Please try again in a moment.",
+      });
     } finally {
       setLoading(false);
     }
@@ -104,6 +121,15 @@ export default function LoginForm() {
           <p className="mt-2 text-sm text-[#4B4B4B]">
             Welcome back. Manage appointments across every service you offer.
           </p>
+          {formAlert ? (
+            <Alert
+              className="mt-5"
+              variant={formAlert.variant}
+              title={formAlert.title}
+              message={formAlert.message}
+              onClose={() => setFormAlert(null)}
+            />
+          ) : null}
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
             <div>

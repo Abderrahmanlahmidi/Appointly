@@ -4,7 +4,7 @@ import React from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 const baseInput =
-  "w-full rounded-xl border border-[#E0E0E0] bg-white py-3 text-sm text-[#0F0F0F] placeholder:text-[#9c9c9c] focus:border-[#0F0F0F] focus:outline-none focus:ring-4 focus:ring-black/10";
+  "w-full rounded-xl border-2 border-[#E0E0E0] bg-white py-3 text-sm text-[#0F0F0F] placeholder:text-[#9c9c9c] focus:border-[#0F0F0F] focus:outline-none focus:ring-4 focus:ring-black/10";
 
 const Input = React.forwardRef(function Input(
   {

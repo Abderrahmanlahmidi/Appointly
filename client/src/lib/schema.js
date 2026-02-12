@@ -8,6 +8,7 @@ import {
     serial,
     pgEnum,
 } from "drizzle-orm/pg-core";
+import { relations } from 'drizzle-orm';
 
 const timestamps = {
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -84,3 +85,8 @@ export const verificationTokens = pgTable(
         compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
     })
 );
+
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  role: one(roles, { fields: [users.roleId], references: [roles.id] }),
+}));
