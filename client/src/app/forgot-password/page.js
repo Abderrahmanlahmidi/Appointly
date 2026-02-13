@@ -1,0 +1,136 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { requestPasswordReset } from "../actions/authActions";
+import { useState } from "react";
+import { Mail, Calendar, Shield, CreditCard } from "lucide-react";
+import Button from "../../../components/ui/Button";
+import Input from "../../../components/ui/Input";
+
+export default function ForgotPasswordPage() {
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm();
+
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const onSubmit = async (data) => {
+        setLoading(true);
+        setMessage("");
+        setError("");
+
+        try {
+            const result = await requestPasswordReset(data.email);
+            if (result.error) {
+                setError(result.error);
+            } else {
+                setMessage("If an account exists, a reset link has been sent (check console for link)");
+            }
+        } catch (err) {
+            setError("An unexpected error occurred.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="relative min-h-screen overflow-hidden bg-[#F7F6F2] text-[#0F0F0F]">
+            <div className="absolute inset-0">
+                <div className="absolute inset-0 bg-[url('/hero-billboard.svg')] bg-cover bg-center opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/70 to-transparent" />
+            </div>
+            <div className="pointer-events-none absolute left-6 top-24 hidden w-56 rounded-2xl border border-[#E0E0E0] bg-white p-4 shadow-xl shadow-black/10 lg:block">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#2D2D2D]">
+                    <Calendar className="h-4 w-4 text-[#0F0F0F]" />
+                    Appointment board
+                </div>
+                <p className="mt-3 text-xs text-[#4B4B4B]">
+                    12 upcoming client visits scheduled today.
+                </p>
+                <div className="mt-3 h-1.5 w-full rounded-full bg-[#EDEDED]">
+                    <div className="h-1.5 w-2/3 rounded-full bg-[#0F0F0F]" />
+                </div>
+            </div>
+
+            <div className="pointer-events-none absolute right-8 top-16 hidden w-52 rounded-2xl border border-[#E0E0E0] bg-white p-4 shadow-xl shadow-black/10 xl:block">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#2D2D2D]">
+                    <Shield className="h-4 w-4 text-[#0F0F0F]" />
+                    Secure access
+                </div>
+                <p className="mt-3 text-xs text-[#4B4B4B]">
+                    Multi-factor protected sign in for teams.
+                </p>
+            </div>
+
+            <div className="pointer-events-none absolute bottom-16 right-10 hidden w-60 rounded-2xl border border-[#E0E0E0] bg-white p-4 shadow-xl shadow-black/10 lg:block">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#2D2D2D]">
+                    <CreditCard className="h-4 w-4 text-[#0F0F0F]" />
+                    Payments
+                </div>
+                <p className="mt-3 text-xs text-[#4B4B4B]">
+                    $4,820 processed this week with instant deposits.
+                </p>
+                <div className="mt-3 flex items-center gap-2 text-[0.7rem] font-semibold text-[#037347]">
+                    +18% week over week
+                </div>
+            </div>
+
+            <div className="relative mx-auto flex min-h-screen items-center justify-center px-5 py-14">
+                <div className="w-full max-w-[440px] rounded-2xl border border-[#E0E0E0] bg-white p-8 shadow-2xl shadow-black/10">
+                    <div className="mb-5 flex items-center gap-3">
+                        <div className="font-[var(--font-display)] text-base font-semibold tracking-tight">
+                            Appointly
+                        </div>
+                        <div className="rounded-full border border-[#E0E0E0] px-3 py-1 text-[0.7rem] font-medium text-[#4B4B4B]">
+                            Reset access
+                        </div>
+                    </div>
+
+                    <h1 className="font-[var(--font-display)] text-3xl font-semibold tracking-tight">
+                        Reset password
+                    </h1>
+                    <p className="mt-2 text-sm text-[#4B4B4B]">
+                        Enter your email and we'll send a secure reset link for Appointly.
+                    </p>
+
+                    <form
+                        onSubmit={handleSubmit(onSubmit)}
+                        className="mt-6 flex flex-col gap-4"
+                    >
+                        <div>
+                            <label className="text-xs font-medium text-[#2D2D2D]" htmlFor="email">
+                                Email
+                            </label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="you@company.com"
+                                icon={Mail}
+                                className="mt-2"
+                                {...register("email", { required: "Email is required" })}
+                            />
+                            {errors.email && (
+                                <p className="mt-2 text-xs text-[#EA3A30]">{errors.email.message}</p>
+                            )}
+                        </div>
+
+                        {message && <p className="text-xs text-[#037347]">{message}</p>}
+                        {error && <p className="text-xs text-[#EA3A30]">{error}</p>}
+
+                        <Button type="submit" disabled={loading} className="w-full">
+                            {loading ? "Sending..." : "Send reset link"}
+                        </Button>
+                    </form>
+
+                    <Button href="/login" variant="link" className="mt-4">
+                        Back to login
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
