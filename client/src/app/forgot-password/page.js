@@ -38,8 +38,12 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-white text-[#0F0F0F]">
-            <div className="pointer-events-none absolute left-6 top-24 hidden w-56 rounded-2xl border border-[#E0E0E0] bg-white p-4 lg:block">
+        <div className="relative min-h-screen overflow-hidden bg-[#F7F6F2] text-[#0F0F0F]">
+            <div className="absolute inset-0">
+                <div className="absolute inset-0 bg-[url('/hero-billboard.svg')] bg-cover bg-center opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/70 to-transparent" />
+            </div>
+            <div className="pointer-events-none absolute left-6 top-24 hidden w-56 rounded-2xl border border-[#E0E0E0] bg-white p-4 shadow-xl shadow-black/10 lg:block">
                 <div className="flex items-center gap-2 text-xs font-semibold text-[#2D2D2D]">
                     <Calendar className="h-4 w-4 text-[#0F0F0F]" />
                     Appointment board
@@ -52,7 +56,7 @@ export default function ForgotPasswordPage() {
                 </div>
             </div>
 
-            <div className="pointer-events-none absolute right-8 top-16 hidden w-52 rounded-2xl border border-[#E0E0E0] bg-white p-4 xl:block">
+            <div className="pointer-events-none absolute right-8 top-16 hidden w-52 rounded-2xl border border-[#E0E0E0] bg-white p-4 shadow-xl shadow-black/10 xl:block">
                 <div className="flex items-center gap-2 text-xs font-semibold text-[#2D2D2D]">
                     <Shield className="h-4 w-4 text-[#0F0F0F]" />
                     Secure access
@@ -62,7 +66,7 @@ export default function ForgotPasswordPage() {
                 </p>
             </div>
 
-            <div className="pointer-events-none absolute bottom-16 right-10 hidden w-60 rounded-2xl border border-[#E0E0E0] bg-white p-4 lg:block">
+            <div className="pointer-events-none absolute bottom-16 right-10 hidden w-60 rounded-2xl border border-[#E0E0E0] bg-white p-4 shadow-xl shadow-black/10 lg:block">
                 <div className="flex items-center gap-2 text-xs font-semibold text-[#2D2D2D]">
                     <CreditCard className="h-4 w-4 text-[#0F0F0F]" />
                     Payments
@@ -76,7 +80,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div className="relative mx-auto flex min-h-screen items-center justify-center px-5 py-14">
-                <div className="w-full max-w-[440px] rounded-2xl border border-[#E0E0E0] bg-white p-8">
+                <div className="w-full max-w-[440px] rounded-2xl border border-[#E0E0E0] bg-white p-8 shadow-2xl shadow-black/10">
                     <div className="mb-5 flex items-center gap-3">
                         <div className="font-[var(--font-display)] text-base font-semibold tracking-tight">
                             Appointly

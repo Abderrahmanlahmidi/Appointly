@@ -1,2 +1,2 @@
-import { handlers } from "@/lib/auth";
-export const { GET, POST } = handlers;
+export const runtime = "nodejs";
+export { GET, POST } from "@/lib/auth";

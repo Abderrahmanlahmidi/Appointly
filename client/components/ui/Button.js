@@ -9,9 +9,9 @@ const variants = {
   primary:
     "bg-[#0F0F0F] text-white hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
   outline:
-    "border-2 border-[#0F0F0F] text-[#0F0F0F] hover:bg-[#0F0F0F] hover:text-white",
+    "border-2  border-[#0F0F0F] text-[#0F0F0F] hover:bg-[#0F0F0F] hover:text-white",
   soft:
-    "border-2 border-[#E0E0E0] bg-white text-[#0F0F0F] hover:bg-[#F6F6F6]",
+    "border-2  border-[#E0E0E0] bg-white text-[#0F0F0F] hover:bg-[#F6F6F6]",
   link: "text-[#0F0F0F] underline underline-offset-4",
 };
 

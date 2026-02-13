@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "../../../lib/db";
-import { users } from "../../../lib/schema";
+import { users, roles } from "../../../lib/schema";
 import { eq } from "drizzle-orm";
+
+export const runtime = "nodejs";
+
 
 export async function POST(req) {
   const body = await req.json();
@@ -23,6 +26,8 @@ export async function POST(req) {
   const clientRole = await db.query.roles.findFirst({
     where: eq(roles.name, "client")
   });
+
+  console.log(clientRole)
 
   await db.insert(users).values({
     firstName: body.firstname,
