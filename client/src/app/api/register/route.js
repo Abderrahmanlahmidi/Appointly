@@ -32,7 +32,6 @@ export async function POST(req) {
   await db.insert(users).values({
     firstName: body.firstname,
     lastName: body.lastname,
-    name: `${body.firstname} ${body.lastname}`,
     email: body.email,
     password: hashedPassword,
     phone: body.phone,
