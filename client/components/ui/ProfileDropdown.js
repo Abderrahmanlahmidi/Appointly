@@ -7,7 +7,8 @@ import Button from "./Button";
 import Popup from "./Popup";
 
 export default function ProfileDropdown({ user }) {
-  const name = user?.name || "User";
+  const fullName =
+    `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || "User";
   const email = user?.email || "";
   const image = user?.image;
   const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
@@ -20,7 +21,7 @@ export default function ProfileDropdown({ user }) {
             {image ? (
               <Image
                 src={image}
-                alt={name}
+                alt={fullName}
                 width={40}
                 height={40}
                 className="h-7 w-7 rounded-full object-cover"
@@ -38,7 +39,7 @@ export default function ProfileDropdown({ user }) {
           <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
             <div>
               <div className="text-sm font-semibold text-[#0F0F0F]">
-                {name}
+                {fullName}
               </div>
               {email ? (
                 <div className="text-xs text-[#4B4B4B]">{email}</div>

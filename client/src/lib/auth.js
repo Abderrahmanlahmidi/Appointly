@@ -13,13 +13,53 @@ import {
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 
+const baseAdapter = DrizzleAdapter(db, {
+  usersTable: users,
+  accountsTable: accounts,
+  sessionsTable: sessions,
+  verificationTokensTable: verificationTokens,
+});
+
+const splitName = (name) => {
+  if (!name || typeof name !== "string") return {};
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return {};
+  if (parts.length === 1) return { firstName: parts[0] };
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
+};
+
+const mapNameToParts = (data) => {
+  if (!data || typeof data !== "object") return data;
+  const { name, ...rest } = data;
+  const parts = splitName(name);
+  const mapped = { ...rest };
+
+  if (mapped.firstName === undefined && parts.firstName !== undefined) {
+    mapped.firstName = parts.firstName;
+  }
+
+  if (mapped.lastName === undefined && parts.lastName !== undefined) {
+    mapped.lastName = parts.lastName;
+  }
+
+  return mapped;
+};
+
+const adapter = {
+  ...baseAdapter,
+  async createUser(data) {
+    return baseAdapter.createUser(mapNameToParts(data));
+  },
+  async updateUser(data) {
+    return baseAdapter.updateUser(mapNameToParts(data));
+  },
+};
+
 export const authOptions = {
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+  adapter,
 
   session: {
     strategy: "jwt",
@@ -59,10 +99,6 @@ export const authOptions = {
         return {
           id: user.id,
           email: user.email,
-          name:
-            user.name ||
-            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-            user.email.split("@")[0],
         };
       },
     }),
@@ -101,7 +137,6 @@ export const authOptions = {
 
         token.id = dbUser?.id;
         token.email = dbUser?.email;
-        token.name = dbUser?.name;
         token.firstName = dbUser?.firstName;
         token.lastName = dbUser?.lastName;
         token.image = dbUser?.image;
@@ -115,7 +150,6 @@ export const authOptions = {
       if (session.user) {
         session.user = {
           id: token.id ?? 0,
-          name: token.name ?? "",
           email: token.email ?? "",
           image: token.image ?? "",
           firstName: token.firstName ?? "",
