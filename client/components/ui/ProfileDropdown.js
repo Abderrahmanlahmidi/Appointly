@@ -2,7 +2,7 @@
 import React from "react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
-import { ChevronDown, LogOut, User } from "lucide-react";
+import { ChevronDown, LayoutGrid, LogOut, User } from "lucide-react";
 import Button from "./Button";
 import Popup from "./Popup";
 
@@ -55,6 +55,14 @@ export default function ProfileDropdown({ user }) {
             >
               <User className="h-4 w-4" />
               View profile
+            </Button>
+            <Button
+              href="/categories"
+              variant="soft"
+              className="w-full justify-start gap-3"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Categories
             </Button>
             <Button
               type="button"

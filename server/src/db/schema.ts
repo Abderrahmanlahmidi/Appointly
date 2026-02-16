@@ -57,6 +57,9 @@ export const categories = pgTable('categories', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
+  userId: integer('user_id')
+    .references(() => users.id)
+    .notNull(),
   ...timestamps,
 });
 
@@ -158,6 +161,12 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, { fields: [users.roleId], references: [roles.id] }),
   appointments: many(appointments),
   notifications: many(notifications),
+  categories: many(categories),
+}));
+
+export const categoryRelations = relations(categories, ({ one, many }) => ({
+  user: one(users, { fields: [categories.userId], references: [users.id] }),
+  services: many(services),
 }));
 
 export const serviceRelations = relations(services, ({ one }) => ({
