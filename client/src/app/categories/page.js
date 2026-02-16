@@ -9,7 +9,7 @@ import DataTable from "../../../components/ui/DataTable";
 import OverlayForm from "../../../components/ui/OverlayForm";
 import PageHeader from "../../../components/ui/PageHeader";
 import SearchInput from "../../../components/ui/SearchInput";
-import { ToastContainer } from "../../../components/ui/Toast";
+import { useToast } from "../../../components/ui/Toast";
 import Popup from "../../../components/ui/Popup";
 
 const fetchCategories = async (userId) => {
@@ -20,6 +20,7 @@ const fetchCategories = async (userId) => {
 };
 
 export default function CategoriesPage() {
+  
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const [overlayOpen, setOverlayOpen] = React.useState(false);
@@ -27,10 +28,9 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = React.useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [categoryToDelete, setCategoryToDelete] = React.useState(null);
-  const [toasts, setToasts] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [filteredCategories, setFilteredCategories] = React.useState([]);
-  const toastTimeouts = React.useRef(new Map());
+  const { toast } = useToast();
   const userId = Number(session?.user?.id);
   const hasUserId = Number.isFinite(userId) && userId > 0;
 
@@ -45,36 +45,6 @@ export default function CategoriesPage() {
     enabled: hasUserId,
   });
 
-  React.useEffect(
-    () => () => {
-      toastTimeouts.current.forEach((timeoutId) =>
-        clearTimeout(timeoutId)
-      );
-      toastTimeouts.current.clear();
-    },
-    []
-  );
-
-  const dismissToast = (id) => {
-    const timeoutId = toastTimeouts.current.get(id);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      toastTimeouts.current.delete(id);
-    }
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  };
-
-  const pushToast = (toast) => {
-    const id =
-      typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const nextToast = { id, ...toast };
-    setToasts((prev) => [nextToast, ...prev]);
-    const timeoutId = setTimeout(() => dismissToast(id), toast.duration ?? 4000);
-    toastTimeouts.current.set(id, timeoutId);
-  };
-
   const createMutation = useMutation({
     mutationFn: async (values) => {
       if (!hasUserId) {
@@ -88,19 +58,13 @@ export default function CategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      pushToast({
-        type: "success",
-        title: "Category created",
-        message: "Your category is ready to use.",
-      });
+      toast.success("Category created successfully.");
       setOverlayOpen(false);
     },
     onError: (err) => {
-      pushToast({
-        type: "error",
-        title: "Create failed",
-        message: err?.response?.data?.message ?? "Unable to create category.",
-      });
+      toast.error(
+        err?.response?.data?.message ?? "Unable to create category."
+      );
     },
   });
 
@@ -116,20 +80,14 @@ export default function CategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      pushToast({
-        type: "success",
-        title: "Category updated",
-        message: "Changes saved successfully.",
-      });
+      toast.success("Category updated successfully.");
       setOverlayOpen(false);
       setSelectedCategory(null);
     },
     onError: (err) => {
-      pushToast({
-        type: "error",
-        title: "Update failed",
-        message: err?.response?.data?.message ?? "Unable to update category.",
-      });
+      toast.error(
+        err?.response?.data?.message ?? "Unable to update category."
+      );
     },
   });
 
@@ -145,18 +103,12 @@ export default function CategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      pushToast({
-        type: "success",
-        title: "Category deleted",
-        message: "The category has been removed.",
-      });
+      toast.success("Category deleted.");
     },
     onError: (err) => {
-      pushToast({
-        type: "error",
-        title: "Delete failed",
-        message: err?.response?.data?.message ?? "Unable to delete category.",
-      });
+      toast.error(
+        err?.response?.data?.message ?? "Unable to delete category."
+      );
     },
   });
 
@@ -184,11 +136,7 @@ export default function CategoriesPage() {
 
   const handleDelete = () => {
     if (!hasUserId) {
-      pushToast({
-        type: "error",
-        title: "Missing user",
-        message: "Please sign in to delete categories.",
-      });
+      toast.error("Please sign in to delete categories.");
       closeDeleteConfirm();
       return;
     }
@@ -199,11 +147,7 @@ export default function CategoriesPage() {
 
   const handleSubmit = (values, mode) => {
     if (!hasUserId) {
-      pushToast({
-        type: "error",
-        title: "Missing user",
-        message: "Please sign in to manage categories.",
-      });
+      toast.error("Please sign in to manage categories.");
       return;
     }
     if (mode === "update" && selectedCategory?.id) {
@@ -260,16 +204,16 @@ export default function CategoriesPage() {
           >
             Edit
           </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-[#EA3A30] text-[#EA3A30] hover:bg-[#EA3A30] hover:text-white"
-              disabled={deleteMutation.isPending}
-              onClick={() => openDeleteConfirm(category)}
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-[#EA3A30] text-[#EA3A30] hover:bg-[#EA3A30] hover:text-white"
+            disabled={deleteMutation.isPending}
+            onClick={() => openDeleteConfirm(category)}
+          >
+            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          </Button>
         </div>
       ),
     },
@@ -347,12 +291,6 @@ export default function CategoriesPage() {
             placeholder: "Optional description",
           },
         ]}
-      />
-
-      <ToastContainer
-        toasts={toasts}
-        onDismiss={dismissToast}
-        position="top-right"
       />
 
       <Popup
