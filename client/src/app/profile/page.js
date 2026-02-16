@@ -1,11 +1,8 @@
 "use client";
-
 import React from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import {
-  QueryClient,
-  QueryClientProvider,
   useMutation,
   useQuery,
   useQueryClient,
@@ -373,15 +370,5 @@ function ProfileContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function ProfilePage() {
-  const [queryClient] = React.useState(() => new QueryClient());
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ProfileContent />
-    </QueryClientProvider>
   );
 }
