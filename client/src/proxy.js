@@ -14,7 +14,7 @@ const sessionCookieNames = [
 const hasSessionCookie = (req) =>
   sessionCookieNames.some((name) => req.cookies.get(name)?.value);
 
-export async function middleware(req){
+export async function proxy(req) {
   const hasSession = hasSessionCookie(req);
   const path = req.nextUrl.pathname;
 
@@ -27,7 +27,7 @@ export async function middleware(req){
   }
 
   return NextResponse.next();
-};
+}
 
 export const config = {
   matcher: ["/login", "/register", "/profile/:path*"],

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { users } from "@/lib/schema";
+import { auth } from "../../../../lib/auth";
+import { db } from "../../../../lib/db";
+import { users } from "../../../../lib/schema";
 import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
@@ -38,6 +38,7 @@ export async function GET() {
       email: user.email ?? "",
       phone: user.phone ?? "",
       image: user.image ?? "",
+      canUpdatePassword: Boolean(user.password),
     },
   });
 }
@@ -64,7 +65,7 @@ export async function PATCH(req) {
     if (!firstName) {
       return NextResponse.json(
         { error: "First name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     updates.firstName = firstName;
@@ -75,7 +76,7 @@ export async function PATCH(req) {
     if (!lastName) {
       return NextResponse.json(
         { error: "Last name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     updates.lastName = lastName;
@@ -94,7 +95,7 @@ export async function PATCH(req) {
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(
       { error: "No valid fields to update" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

@@ -9,5 +9,14 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is missing');
 }
 
-const client = postgres(process.env.DATABASE_URL);
+const databaseUrl = new URL(process.env.DATABASE_URL);
+const schemaName = databaseUrl.searchParams.get('schema');
+if (schemaName) {
+  databaseUrl.searchParams.delete('schema');
+}
+
+const client = postgres(
+  databaseUrl.toString(),
+  schemaName ? { connection: { search_path: schemaName } } : {},
+);
 export const db = drizzle(client, { schema });
