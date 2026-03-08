@@ -26,6 +26,9 @@ export default function HomeNavbar({ session }) {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm text-[#4B4B4B] md:flex">
+          <Link href="/services/catalog" className="transition hover:text-[#0F0F0F]">
+            Services
+          </Link>
           <a href="#features" className="transition hover:text-[#0F0F0F]">
             Features
           </a>

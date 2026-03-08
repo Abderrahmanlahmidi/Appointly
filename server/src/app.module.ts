@@ -3,9 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DrizzleModule } from './db/drizzle.module';
 import { CategoriesModule } from './categories/categories.module';
+import { ServicesModule } from './services/services.module';
 
 @Module({
-  imports: [DrizzleModule, CategoriesModule],
+  imports: [DrizzleModule, CategoriesModule, ServicesModule],
   controllers: [AppController],
   providers: [AppService],
 })

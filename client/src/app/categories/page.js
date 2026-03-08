@@ -3,7 +3,7 @@
 import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import axios from "../../lib/axios";
+import axios from "../../../lib/axios";
 import Button from "../../../components/ui/Button";
 import DataTable from "../../../components/ui/DataTable";
 import OverlayForm from "../../../components/ui/OverlayForm";
@@ -20,7 +20,6 @@ const fetchCategories = async (userId) => {
 };
 
 export default function CategoriesPage() {
-  
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const [overlayOpen, setOverlayOpen] = React.useState(false);
@@ -62,9 +61,7 @@ export default function CategoriesPage() {
       setOverlayOpen(false);
     },
     onError: (err) => {
-      toast.error(
-        err?.response?.data?.message ?? "Unable to create category."
-      );
+      toast.error(err?.response?.data?.message ?? "Unable to create category.");
     },
   });
 
@@ -85,9 +82,7 @@ export default function CategoriesPage() {
       setSelectedCategory(null);
     },
     onError: (err) => {
-      toast.error(
-        err?.response?.data?.message ?? "Unable to update category."
-      );
+      toast.error(err?.response?.data?.message ?? "Unable to update category.");
     },
   });
 
@@ -106,9 +101,7 @@ export default function CategoriesPage() {
       toast.success("Category deleted.");
     },
     onError: (err) => {
-      toast.error(
-        err?.response?.data?.message ?? "Unable to delete category."
-      );
+      toast.error(err?.response?.data?.message ?? "Unable to delete category.");
     },
   });
 
@@ -166,9 +159,7 @@ export default function CategoriesPage() {
       : { name: "", description: "" };
 
   const isSaving =
-    formMode === "update"
-      ? updateMutation.isPending
-      : createMutation.isPending;
+    formMode === "update" ? updateMutation.isPending : createMutation.isPending;
 
   const columns = [
     {

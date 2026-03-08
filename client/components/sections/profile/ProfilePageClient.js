@@ -56,14 +56,18 @@ function ProfileContent() {
           </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div
+          className={`grid gap-6 ${
+            profile?.canUpdatePassword ? "lg:grid-cols-2" : ""
+          }`}
+        >
           <ProfileInfoCard
             profile={profile}
             isLoading={isLoading}
             isError={isError}
             error={error}
           />
-          <PasswordCard />
+          {profile?.canUpdatePassword ? <PasswordCard /> : null}
         </div>
       </div>
     </div>

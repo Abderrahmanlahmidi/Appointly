@@ -3,12 +3,14 @@ import {
   text,
   varchar,
   boolean,
-  doublePrecision,
   integer,
   timestamp,
   pgEnum,
   serial,
   primaryKey,
+  date,
+  time,
+  numeric,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import type { AdapterAccount } from 'next-auth/adapters';
@@ -23,6 +25,10 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'INFO',
   'ALERT',
   'REMINDER',
+]);
+export const serviceStatusEnum = pgEnum('service_status', [
+  'ACTIVE',
+  'INACTIVE',
 ]);
 
 const timestamps = {
@@ -67,36 +73,41 @@ export const services = pgTable('services', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
-  price: doublePrecision('price').notNull(),
   duration: integer('duration').notNull(),
+  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
+  status: serviceStatusEnum('status').default('ACTIVE').notNull(),
   categoryId: integer('category_id').references(() => categories.id),
+  providerId: integer('provider_id').references(() => users.id),
   ...timestamps,
 });
 
 export const availabilities = pgTable('availabilities', {
   id: serial('id').primaryKey(),
-  date: timestamp('date', { mode: 'date' }).notNull(),
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time').notNull(),
+  date: date('date', { mode: 'date' }).notNull(),
+  startTime: time('start_time').notNull(),
+  endTime: time('end_time').notNull(),
   isBooked: boolean('is_booked').default(false),
+  serviceId: integer('service_id').references(() => services.id),
   ...timestamps,
 });
 
 export const appointments = pgTable('appointments', {
   id: serial('id').primaryKey(),
-  dateTime: timestamp('date_time').notNull(),
   status: statusEnum('status').default('PENDING'),
-  totalPrice: doublePrecision('total_price').notNull(),
+  totalPrice: numeric('total_price', { precision: 10, scale: 2 }).notNull(),
+  note: text('note'),
   availabilityId: integer('availability_id').references(
     () => availabilities.id,
   ),
-  userId: integer('user_id').references(() => users.id),
   serviceId: integer('service_id').references(() => services.id),
+  clientId: integer('client_id').references(() => users.id),
+  providerId: integer('provider_id').references(() => users.id),
   ...timestamps,
 });
 
 export const notifications = pgTable('notifications', {
   id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
   message: text('message').notNull(),
   type: notificationTypeEnum('type'),
   isRead: boolean('is_read').default(false),
@@ -107,8 +118,7 @@ export const notifications = pgTable('notifications', {
 export const chatbotLogs = pgTable('chatbot_logs', {
   id: serial('id').primaryKey(),
   userMessage: text('user_message').notNull(),
-  detectedIntent: varchar('detected_intent', { length: 255 }),
-  response: text('response').notNull(),
+  botResponse: text('bot_response').notNull(),
   userId: integer('user_id').references(() => users.id),
   ...timestamps,
 });
@@ -159,9 +169,14 @@ export const verificationTokens = pgTable(
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, { fields: [users.roleId], references: [roles.id] }),
-  appointments: many(appointments),
+  appointments: many(appointments, { relationName: 'clientAppointments' }),
+  providedAppointments: many(appointments, {
+    relationName: 'providerAppointments',
+  }),
   notifications: many(notifications),
   categories: many(categories),
+  services: many(services, { relationName: 'providerServices' }),
+  chatbotLogs: many(chatbotLogs),
 }));
 
 export const categoryRelations = relations(categories, ({ one, many }) => ({
@@ -169,15 +184,42 @@ export const categoryRelations = relations(categories, ({ one, many }) => ({
   services: many(services),
 }));
 
-export const serviceRelations = relations(services, ({ one }) => ({
+export const serviceRelations = relations(services, ({ one, many }) => ({
   category: one(categories, {
     fields: [services.categoryId],
     references: [categories.id],
   }),
+  provider: one(users, {
+    fields: [services.providerId],
+    references: [users.id],
+    relationName: 'providerServices',
+  }),
+  availabilities: many(availabilities),
+  appointments: many(appointments),
 }));
 
+export const availabilityRelations = relations(
+  availabilities,
+  ({ one, many }) => ({
+    service: one(services, {
+      fields: [availabilities.serviceId],
+      references: [services.id],
+    }),
+    appointments: many(appointments),
+  }),
+);
+
 export const appointmentRelations = relations(appointments, ({ one }) => ({
-  user: one(users, { fields: [appointments.userId], references: [users.id] }),
+  client: one(users, {
+    fields: [appointments.clientId],
+    references: [users.id],
+    relationName: 'clientAppointments',
+  }),
+  provider: one(users, {
+    fields: [appointments.providerId],
+    references: [users.id],
+    relationName: 'providerAppointments',
+  }),
   service: one(services, {
     fields: [appointments.serviceId],
     references: [services.id],

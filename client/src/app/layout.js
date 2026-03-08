@@ -18,8 +18,9 @@ const space = Space_Grotesk({
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${ibm.variable} ${space.variable} antialiased font-[var(--font-sans)] text-[#0F0F0F]`}
       >
         <Providers>{children}</Providers>
