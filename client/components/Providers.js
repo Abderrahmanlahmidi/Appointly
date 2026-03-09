@@ -1,7 +1,10 @@
 "use client";
+
 import { SessionProvider } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import RouteGuard from "./RouteGuard";
+import { ToastProvider } from "./ui/Toast";
 
 export function Providers({ children }) {
   const [queryClient] = useState(
@@ -13,12 +16,16 @@ export function Providers({ children }) {
             staleTime: 60 * 1000,
           },
         },
-      }),
+      })
   );
 
   return (
     <SessionProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <RouteGuard>{children}</RouteGuard>
+        </ToastProvider>
+      </QueryClientProvider>
     </SessionProvider>
   );
 }
