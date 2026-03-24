@@ -3,7 +3,6 @@
 import { SessionProvider } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import RouteGuard from "./RouteGuard";
 import { ToastProvider } from "./ui/Toast";
 
 export function Providers({ children }) {
@@ -22,9 +21,7 @@ export function Providers({ children }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <RouteGuard>{children}</RouteGuard>
-        </ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
       </QueryClientProvider>
     </SessionProvider>
   );

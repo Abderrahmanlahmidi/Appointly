@@ -11,11 +11,7 @@ import Button from "../../ui/Button";
 
 export default function HomeHero() {
   return (
-    <section className="relative overflow-hidden border-b border-[#E0E0E0] bg-[#F7F6F2]">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('/hero-billboard.svg')] bg-cover bg-center opacity-60" />
-        <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/70 to-transparent" />
-      </div>
+    <section className="relative overflow-hidden border-b border-[#E0E0E0] bg-white">
 
       <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
         <div>

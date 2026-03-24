@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { db } from "../../../lib/db";
-import { users, roles } from "../../../lib/schema";
+import { db } from "../../../../lib/db";
+import { users, roles } from "../../../../lib/schema";
 import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
-
 
 export async function POST(req) {
   const body = await req.json();
@@ -17,17 +16,17 @@ export async function POST(req) {
   if (existingUser) {
     return NextResponse.json(
       { message: "User already exists" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const hashedPassword = await bcrypt.hash(body.password, 10);
 
   const clientRole = await db.query.roles.findFirst({
-    where: eq(roles.name, "client")
+    where: eq(roles.name, "client"),
   });
 
-  console.log(clientRole)
+  console.log(clientRole);
 
   await db.insert(users).values({
     firstName: body.firstname,
@@ -35,7 +34,7 @@ export async function POST(req) {
     email: body.email,
     password: hashedPassword,
     phone: body.phone,
-    roleId: clientRole.id
+    roleId: clientRole.id,
   });
 
   return NextResponse.json({ message: "User created" });

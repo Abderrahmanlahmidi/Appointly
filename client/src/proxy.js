@@ -61,7 +61,7 @@ const getSessionToken = async (req) => {
   return null;
 };
 
-export async function middleware(req) {
+export async function proxy(req) {
   const path = req.nextUrl.pathname;
   const token = await getSessionToken(req);
   const isAuthenticated = Boolean(token);

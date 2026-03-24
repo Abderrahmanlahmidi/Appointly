@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { users } from "@/lib/schema";
+import { auth } from "../../../../../lib/auth";
+import { db } from "../../../../../lib/db";
+import { users } from "../../../../../lib/schema";
 import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
@@ -37,14 +37,14 @@ export async function POST(req) {
   if (!currentPassword || !newPassword) {
     return NextResponse.json(
       { error: "Current and new passwords are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (newPassword.length < MIN_PASSWORD_LENGTH) {
     return NextResponse.json(
       { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -55,7 +55,7 @@ export async function POST(req) {
   if (!user || !user.password) {
     return NextResponse.json(
       { error: "Password cannot be updated for this account" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -63,7 +63,7 @@ export async function POST(req) {
   if (!isValid) {
     return NextResponse.json(
       { error: "Current password is incorrect" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

@@ -4,7 +4,7 @@ import React from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Phone } from "lucide-react";
+import { ImageUp, Phone } from "lucide-react";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
 
@@ -38,8 +38,13 @@ export default function ProfileInfoCard({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors: updateErrors },
   } = updateForm;
+
+  const imageFiles = watch("image");
+  const selectedImageName =
+    imageFiles && imageFiles.length > 0 ? imageFiles[0]?.name : "";
 
   React.useEffect(() => {
     if (!profile) return;
@@ -157,11 +162,27 @@ export default function ProfileInfoCard({
             <label className="text-xs font-medium text-[#2D2D2D]">
               Profile image
             </label>
-            <Input
-              className="mt-2 bg-white"
+            <label
+              htmlFor="profile-image-upload"
+              className="mt-2 flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-[#D7D7D7] bg-[#FAFAFA] px-4 py-3 transition hover:border-[#0F0F0F] hover:bg-[#F7F6F2]"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-[#0F0F0F] shadow-sm">
+                <ImageUp className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-[#0F0F0F]">
+                  {selectedImageName || "Choose a new profile image"}
+                </span>
+                <span className="block text-xs text-[#6B6B6B]">
+                  PNG, JPG, or WEBP
+                </span>
+              </span>
+            </label>
+            <input
+              id="profile-image-upload"
               type="file"
               accept="image/*"
-              inputClassName="file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#0F0F0F] file:shadow-none file:cursor-pointer file:hover:bg-[#F7F6F2]"
+              className="sr-only"
               {...register("image")}
             />
           </div>
