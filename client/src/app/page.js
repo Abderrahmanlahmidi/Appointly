@@ -1,6 +1,6 @@
-import { auth } from "../../lib/auth";
 import HomeNavbar from "../../components/sections/home/Navbar";
 import HomeHero from "../../components/sections/home/Hero";
+import { auth } from "../../lib/auth";
 
 export default async function HomePage() {
   const session = await auth();
