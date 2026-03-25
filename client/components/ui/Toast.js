@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, AlertCircle, CheckCircle2, AlertTriangle, Info } from "lucide-react";
 
@@ -72,9 +72,11 @@ const ToastMessage = ({ message, type = "info", onDismiss }) => {
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const nextToastIdRef = useRef(0);
 
   const showToast = (message, type = "info", duration = 5000) => {
-    const id = Date.now().toString();
+    nextToastIdRef.current += 1;
+    const id = `toast-${nextToastIdRef.current}`;
     setToasts((prev) => [...prev, { id, message, type }]);
 
     if (duration) {

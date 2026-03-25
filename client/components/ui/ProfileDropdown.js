@@ -25,6 +25,7 @@ export default function ProfileDropdown({ user }) {
                 width={40}
                 height={40}
                 className="h-7 w-7 rounded-full object-cover"
+                unoptimized
               />
             ) : (
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0F0F0F] text-white">
@@ -56,22 +57,26 @@ export default function ProfileDropdown({ user }) {
               <User className="h-4 w-4" />
               View profile
             </Button>
-            <Button
-              href="/categories"
-              variant="soft"
-              className="w-full justify-start gap-3"
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Categories
-            </Button>
-            <Button
-              href="/services"
-              variant="soft"
-              className="w-full justify-start gap-3"
-            >
-              <BriefcaseBusiness className="h-4 w-4" />
-              Services
-            </Button>
+            {String(user?.role ?? "").toUpperCase() === "PROVIDER" ? (
+              <>
+                <Button
+                  href="/categories"
+                  variant="soft"
+                  className="w-full justify-start gap-3"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  Categories
+                </Button>
+                <Button
+                  href="/services"
+                  variant="soft"
+                  className="w-full justify-start gap-3"
+                >
+                  <BriefcaseBusiness className="h-4 w-4" />
+                  Services
+                </Button>
+              </>
+            ) : null}
             <Button
               type="button"
               variant="outline"

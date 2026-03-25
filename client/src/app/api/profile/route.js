@@ -9,6 +9,9 @@ export const runtime = "nodejs";
 const toTrimmedString = (value) =>
   typeof value === "string" ? value.trim() : "";
 
+const imageDataUrlPattern = /^data:image\/(png|jpeg|jpg|webp);base64,[a-z0-9+/=\s]+$/i;
+const maxImageDataUrlLength = 2 * 1024 * 1024;
+
 const getUserId = (session) => {
   const id = Number(session?.user?.id);
   return Number.isFinite(id) && id > 0 ? id : null;
@@ -84,11 +87,29 @@ export async function PATCH(req) {
 
   if (Object.prototype.hasOwnProperty.call(body, "phone")) {
     const phone = toTrimmedString(body.phone);
+    if (phone.length > 30) {
+      return NextResponse.json(
+        { error: "Phone number must be 30 characters or fewer" },
+        { status: 400 },
+      );
+    }
     updates.phone = phone || null;
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "image")) {
     const image = toTrimmedString(body.image);
+    if (
+      image &&
+      (!imageDataUrlPattern.test(image) || image.length > maxImageDataUrlLength)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Profile image must be a PNG, JPG, or WEBP file up to 2MB",
+        },
+        { status: 400 },
+      );
+    }
     updates.image = image || null;
   }
 

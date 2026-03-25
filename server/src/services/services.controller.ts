@@ -9,18 +9,20 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { getOptionalAuthUser, requireAuthUser } from '../auth/request-auth';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
-const parseOptionalId = (value?: string, label = 'id') => {
+const parseScope = (value?: string) => {
   if (value === undefined) return undefined;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new BadRequestException(`Invalid ${label}`);
+  if (value !== 'owned') {
+    throw new BadRequestException('Invalid scope');
   }
-  return parsed;
+  return value;
 };
 
 @Controller('services')
@@ -28,60 +30,46 @@ export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Get()
-  findAll(@Query('providerId') providerId?: string) {
-    return this.servicesService.findAll(
-      parseOptionalId(providerId, 'providerId'),
-    );
+  async findAll(@Req() req: Request, @Query('scope') scope?: string) {
+    const normalizedScope = parseScope(scope);
+    const authUser =
+      normalizedScope === 'owned' ? await requireAuthUser(req) : null;
+
+    return this.servicesService.findAll(normalizedScope, authUser);
   }
 
   @Get(':id/details')
-  findOneWithCreator(
+  async findOneWithCreator(
     @Param('id', ParseIntPipe) id: number,
-    @Query('providerId') providerId?: string,
+    @Req() req: Request,
   ) {
     return this.servicesService.findOneWithCreator(
       id,
-      parseOptionalId(providerId, 'providerId'),
+      await getOptionalAuthUser(req),
     );
   }
 
   @Get(':id')
-  findOne(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('providerId') providerId?: string,
-  ) {
-    return this.servicesService.findOne(
-      id,
-      parseOptionalId(providerId, 'providerId'),
-    );
+  async findOne(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    return this.servicesService.findOne(id, await getOptionalAuthUser(req));
   }
 
   @Post()
-  create(@Body() body: CreateServiceDto) {
-    return this.servicesService.create(body);
+  async create(@Body() body: CreateServiceDto, @Req() req: Request) {
+    return this.servicesService.create(body, await requireAuthUser(req));
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateServiceDto,
-    @Query('providerId') providerId?: string,
+    @Req() req: Request,
   ) {
-    return this.servicesService.update(
-      id,
-      body,
-      parseOptionalId(providerId, 'providerId'),
-    );
+    return this.servicesService.update(id, body, await requireAuthUser(req));
   }
 
   @Delete(':id')
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('providerId') providerId?: string,
-  ) {
-    return this.servicesService.remove(
-      id,
-      parseOptionalId(providerId, 'providerId'),
-    );
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    return this.servicesService.remove(id, await requireAuthUser(req));
   }
 }

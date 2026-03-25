@@ -194,21 +194,22 @@ export default function ServiceDetailsPage() {
                       width={40}
                       height={40}
                       className="h-10 w-10 rounded-full object-cover"
+                      unoptimized
                     />
                   ) : (
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0F0F0F] text-sm font-semibold text-white">
                       {creatorFullName.charAt(0).toUpperCase()}
                     </span>
                   )}
-                  <div>
-                    <div className="text-sm font-semibold text-[#0F0F0F]">
-                      {creatorFullName}
-                    </div>
-                    <div className="text-xs text-[#4B4B4B]">
-                      {createdBy.email || "No email provided"}
+                    <div>
+                      <div className="text-sm font-semibold text-[#0F0F0F]">
+                        {creatorFullName}
+                      </div>
+                      <div className="text-xs text-[#4B4B4B]">
+                        Service provider
+                      </div>
                     </div>
                   </div>
-                </div>
               ) : (
                 <div className="mt-2 text-sm text-[#4B4B4B]">
                   Creator information is unavailable.

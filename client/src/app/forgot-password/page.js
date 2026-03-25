@@ -28,7 +28,10 @@ export default function ForgotPasswordPage() {
             if (result.error) {
                 setError(result.error);
             } else {
-                setMessage("If an account exists, a reset link has been sent (check console for link)");
+                setMessage(
+                    result.success ||
+                        "If an account exists, a reset link has been generated."
+                );
             }
         } catch (err) {
             setError("An unexpected error occurred.");
@@ -94,7 +97,7 @@ export default function ForgotPasswordPage() {
                         Reset password
                     </h1>
                     <p className="mt-2 text-sm text-[#4B4B4B]">
-                        Enter your email and we'll send a secure reset link for Appointly.
+                        Enter your email and we&apos;ll send a secure reset link for Appointly.
                     </p>
 
                     <form
