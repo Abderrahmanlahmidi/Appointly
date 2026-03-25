@@ -12,9 +12,9 @@ import SearchInput from "../../../components/ui/SearchInput";
 import { useToast } from "../../../components/ui/Toast";
 import Popup from "../../../components/ui/Popup";
 
-const fetchCategories = async (userId) => {
+const fetchCategories = async () => {
   const { data } = await axios.get("/categories", {
-    params: { userId },
+    params: { scope: "owned" },
   });
   return data;
 };
@@ -41,8 +41,8 @@ export default function CategoriesPage() {
     isError,
     error,
   } = useQuery({
-    queryKey: ["categories", hasUserId ? userId : null],
-    queryFn: () => fetchCategories(userId),
+    queryKey: ["categories", "owned"],
+    queryFn: fetchCategories,
     enabled: hasUserId,
   });
 
@@ -51,10 +51,7 @@ export default function CategoriesPage() {
       if (!hasUserId) {
         throw new Error("Missing user id.");
       }
-      const response = await axios.post("/categories", {
-        ...values,
-        userId,
-      });
+      const response = await axios.post("/categories", values);
       return response.data;
     },
     onSuccess: () => {
@@ -72,9 +69,7 @@ export default function CategoriesPage() {
       if (!hasUserId) {
         throw new Error("Missing user id.");
       }
-      const response = await axios.patch(`/categories/${id}`, values, {
-        params: { userId },
-      });
+      const response = await axios.patch(`/categories/${id}`, values);
       return response.data;
     },
     onSuccess: () => {
@@ -93,9 +88,7 @@ export default function CategoriesPage() {
       if (!hasUserId) {
         throw new Error("Missing user id.");
       }
-      const response = await axios.delete(`/categories/${id}`, {
-        params: { userId },
-      });
+      const response = await axios.delete(`/categories/${id}`);
       return response.data;
     },
     onSuccess: () => {

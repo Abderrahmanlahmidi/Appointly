@@ -5,5 +5,4 @@ export class CreateServiceDto {
   price: number;
   status?: 'ACTIVE' | 'INACTIVE';
   categoryId?: number | null;
-  providerId: number;
 }

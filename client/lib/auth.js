@@ -11,7 +11,11 @@ import {
   roles,
 } from "./schema";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { ensureRole, normalizeRoleName } from "./roles";
+
+const normalizeEmail = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase() : "";
 
 const baseAdapter = DrizzleAdapter(db, {
   usersTable: users,
@@ -60,19 +64,10 @@ const adapter = {
 
 export const authOptions = {
   adapter,
-
   session: {
     strategy: "jwt",
   },
-
   providers: [
-
-    GoogleProvider({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
-
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -83,64 +78,71 @@ export const authOptions = {
       async authorize(credentials) {
         if (!credentials) return null;
 
+        const email = normalizeEmail(credentials.email);
+        const password =
+          typeof credentials.password === "string" ? credentials.password : "";
+
+        if (!email || !password) {
+          return null;
+        }
+
         const user = await db.query.users.findFirst({
-          where: eq(users.email, credentials.email),
+          where: sql`lower(${users.email}) = ${email}`,
         });
 
         if (!user || !user.password) return null;
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) return null;
 
         return {
-          id: user.id,
+          id: String(user.id),
           email: user.email,
         };
       },
     }),
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+          }),
+        ]
+      : []),
   ],
-
-
   events: {
-
     async createUser({ user }) {
-      const clientRole = await db.query.roles.findFirst({
-        where: eq(roles.name, "client"),
-      });
-
-      if (!clientRole) return;
+      const defaultRole = await ensureRole(
+        "USER",
+        "Default role for standard users",
+      );
 
       await db
         .update(users)
-        .set({ roleId: clientRole.id })
+        .set({ roleId: defaultRole.id })
         .where(eq(users.id, user.id));
     },
   },
-
-
   callbacks: {
-
     async jwt({ token, user }) {
-
       if (user) {
         const dbUser = await db.query.users.findFirst({
-          where: eq(users.id, user.id),
+          where: eq(users.id, Number(user.id)),
         });
 
-        const dbRole = await db.query.roles.findFirst({
-          where: eq(roles.id, dbUser?.roleId),
-        });
+        const dbRole = dbUser?.roleId
+          ? await db.query.roles.findFirst({
+              where: eq(roles.id, dbUser.roleId),
+            })
+          : null;
 
         token.id = dbUser?.id;
         token.email = dbUser?.email;
         token.firstName = dbUser?.firstName;
         token.lastName = dbUser?.lastName;
         token.image = dbUser?.image;
-        token.role = dbRole?.name ?? "client";
+        token.role = normalizeRoleName(dbRole?.name);
       }
 
       return token;
@@ -154,15 +156,14 @@ export const authOptions = {
           image: token.image ?? "",
           firstName: token.firstName ?? "",
           lastName: token.lastName ?? "",
-          role: token.role ?? "client",
+          role: normalizeRoleName(token.role),
         };
       }
 
       return session;
     },
   },
-
-  debug: true,
+  debug: process.env.NODE_ENV === "development",
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);

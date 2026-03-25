@@ -2,6 +2,7 @@
 
 import React from "react";
 import axios from "axios";
+import Image from "next/image";
 import {
   QueryClient,
   QueryClientProvider,
@@ -33,11 +34,13 @@ function ProfileContent() {
         <section className="flex flex-col gap-6 rounded-3xl border border-[#E0E0E0] bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             {profile?.image ? (
-              <img
+              <Image
                 src={profile.image}
                 alt={fullName}
+                width={64}
+                height={64}
                 className="h-16 w-16 rounded-full object-cover"
-                loading="lazy"
+                unoptimized
               />
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#0F0F0F] text-white">

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { signIn } from "next-auth/react";
@@ -26,7 +26,7 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors },
   } = useForm();
 
@@ -61,7 +61,11 @@ export default function RegisterForm() {
     mutation.mutate(data);
   };
 
-  const password = watch("password", "");
+  const password = useWatch({
+    control,
+    name: "password",
+    defaultValue: "",
+  });
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F7F6F2] text-[#0F0F0F]">
@@ -261,7 +265,7 @@ export default function RegisterForm() {
           <Button
             variant="soft"
             className="w-full"
-            onClick={() => signIn("google", { callbackUrl: "/login" })}
+            onClick={() => signIn("google", { callbackUrl: "/" })}
           >
             <Chrome size={18} />
             Continue with Google

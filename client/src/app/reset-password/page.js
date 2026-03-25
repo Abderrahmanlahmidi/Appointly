@@ -1,6 +1,6 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { resetPassword } from "../actions/authActions";
 import { useState, Suspense } from "react";
 import { Lock, Calendar, Shield, CreditCard } from "lucide-react";
@@ -15,13 +15,18 @@ function ResetPasswordContent() {
     const {
         register,
         handleSubmit,
-        watch,
+        control,
         formState: { errors },
     } = useForm();
 
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const password = useWatch({
+        control,
+        name: "password",
+        defaultValue: "",
+    });
 
     const onSubmit = async (data) => {
         if (!token) {
@@ -150,7 +155,7 @@ function ResetPasswordContent() {
                                         className="mt-2"
                                         {...register("password", {
                                             required: "Password is required",
-                                            minLength: { value: 6, message: "Use at least 6 characters" },
+                                            minLength: { value: 8, message: "Use at least 8 characters" },
                                         })}
                                     />
                                     {errors.password && (
@@ -171,8 +176,8 @@ function ResetPasswordContent() {
                                         {...register("confirmPassword", {
                                             required: "Please confirm your password",
                                             validate: (val) => {
-                                                if (watch("password") != val) {
-                                                    return "Your passwords do no match";
+                                                if (password !== val) {
+                                                    return "Your passwords do not match";
                                                 }
                                             },
                                         })}

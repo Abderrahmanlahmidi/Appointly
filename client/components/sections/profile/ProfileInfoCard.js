@@ -2,7 +2,7 @@
 
 import React from "react";
 import axios from "axios";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ImageUp, Phone } from "lucide-react";
 import Button from "../../ui/Button";
@@ -38,13 +38,36 @@ export default function ProfileInfoCard({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { errors: updateErrors },
   } = updateForm;
 
-  const imageFiles = watch("image");
+  const imageFiles = useWatch({
+    control,
+    name: "image",
+  });
   const selectedImageName =
     imageFiles && imageFiles.length > 0 ? imageFiles[0]?.name : "";
+
+  const validateImageFile = (file) => {
+    if (!file) return true;
+
+    const allowedMimeTypes = new Set([
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+    ]);
+
+    if (!allowedMimeTypes.has(file.type)) {
+      return "Profile image must be PNG, JPG, or WEBP";
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      return "Profile image must be 2MB or smaller";
+    }
+
+    return true;
+  };
 
   React.useEffect(() => {
     if (!profile) return;
@@ -181,10 +204,17 @@ export default function ProfileInfoCard({
             <input
               id="profile-image-upload"
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/webp"
               className="sr-only"
-              {...register("image")}
+              {...register("image", {
+                validate: (value) => validateImageFile(value?.[0]),
+              })}
             />
+            {updateErrors.image ? (
+              <p className="mt-2 text-xs text-[#EA3A30]">
+                {updateErrors.image.message}
+              </p>
+            ) : null}
           </div>
 
           {updateMessage ? (

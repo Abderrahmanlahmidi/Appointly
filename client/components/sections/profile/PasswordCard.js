@@ -2,7 +2,7 @@
 
 import React from "react";
 import axios from "axios";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { Shield } from "lucide-react";
 import Button from "../../ui/Button";
@@ -25,10 +25,14 @@ export default function PasswordCard() {
     handleSubmit: handleSubmitPassword,
     reset: resetPassword,
     formState: { errors: passwordErrors },
-    watch,
+    control,
   } = passwordForm;
 
-  const newPassword = watch("newPassword");
+  const newPassword = useWatch({
+    control,
+    name: "newPassword",
+    defaultValue: "",
+  });
 
   const passwordMutation = useMutation({
     mutationFn: async (values) => {

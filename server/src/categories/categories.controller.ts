@@ -9,18 +9,20 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { getOptionalAuthUser, requireAuthUser } from '../auth/request-auth';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
-const parseOptionalId = (value?: string) => {
+const parseScope = (value?: string) => {
   if (value === undefined) return undefined;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new BadRequestException('Invalid userId');
+  if (value !== 'owned') {
+    throw new BadRequestException('Invalid scope');
   }
-  return parsed;
+  return value;
 };
 
 @Controller('categories')
@@ -28,37 +30,35 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  findAll(@Query('userId') userId?: string) {
-    return this.categoriesService.findAll(parseOptionalId(userId));
+  async findAll(@Req() req: Request, @Query('scope') scope?: string) {
+    const normalizedScope = parseScope(scope);
+    const authUser =
+      normalizedScope === 'owned' ? await requireAuthUser(req) : null;
+
+    return this.categoriesService.findAll(normalizedScope, authUser);
   }
 
   @Get(':id')
-  findOne(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('userId') userId?: string,
-  ) {
-    return this.categoriesService.findOne(id, parseOptionalId(userId));
+  async findOne(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    return this.categoriesService.findOne(id, await getOptionalAuthUser(req));
   }
 
   @Post()
-  create(@Body() body: CreateCategoryDto) {
-    return this.categoriesService.create(body);
+  async create(@Body() body: CreateCategoryDto, @Req() req: Request) {
+    return this.categoriesService.create(body, await requireAuthUser(req));
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateCategoryDto,
-    @Query('userId') userId?: string,
+    @Req() req: Request,
   ) {
-    return this.categoriesService.update(id, body, parseOptionalId(userId));
+    return this.categoriesService.update(id, body, await requireAuthUser(req));
   }
 
   @Delete(':id')
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('userId') userId?: string,
-  ) {
-    return this.categoriesService.remove(id, parseOptionalId(userId));
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    return this.categoriesService.remove(id, await requireAuthUser(req));
   }
 }

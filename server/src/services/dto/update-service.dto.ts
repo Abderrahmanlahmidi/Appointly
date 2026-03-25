@@ -5,5 +5,4 @@ export class UpdateServiceDto {
   price?: number;
   status?: 'ACTIVE' | 'INACTIVE';
   categoryId?: number | null;
-  providerId?: number;
 }

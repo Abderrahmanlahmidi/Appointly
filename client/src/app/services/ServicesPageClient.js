@@ -12,15 +12,17 @@ import SearchInput from "../../../components/ui/SearchInput";
 import { useToast } from "../../../components/ui/Toast";
 import Popup from "../../../components/ui/Popup";
 
-const fetchServices = async (providerId) => {
+const fetchServices = async () => {
   const { data } = await axios.get("/services", {
-    params: { providerId },
+    params: { scope: "owned" },
   });
   return data;
 };
 
 const fetchCategories = async () => {
-  const { data } = await axios.get("/categories");
+  const { data } = await axios.get("/categories", {
+    params: { scope: "owned" },
+  });
   return data;
 };
 
@@ -33,7 +35,9 @@ const normalizePayload = (values, mode) => {
     status: values.status?.trim() || undefined,
     categoryId:
       values.categoryId === "" || values.categoryId === undefined
-        ? undefined
+        ? mode === "update"
+          ? null
+          : undefined
         : Number(values.categoryId),
   };
 
@@ -73,8 +77,8 @@ export default function ServicesPage() {
     isError,
     error,
   } = useQuery({
-    queryKey: ["services", hasProviderId ? providerId : null],
-    queryFn: () => fetchServices(providerId),
+    queryKey: ["services", "owned"],
+    queryFn: fetchServices,
     enabled: hasProviderId,
   });
 
@@ -89,10 +93,7 @@ export default function ServicesPage() {
       if (!hasProviderId) {
         throw new Error("Missing provider id.");
       }
-      const response = await axios.post("/services", {
-        ...values,
-        providerId,
-      });
+      const response = await axios.post("/services", values);
       return response.data;
     },
     onSuccess: () => {
@@ -110,9 +111,7 @@ export default function ServicesPage() {
       if (!hasProviderId) {
         throw new Error("Missing provider id.");
       }
-      const response = await axios.patch(`/services/${id}`, values, {
-        params: { providerId },
-      });
+      const response = await axios.patch(`/services/${id}`, values);
       return response.data;
     },
     onSuccess: () => {
@@ -131,9 +130,7 @@ export default function ServicesPage() {
       if (!hasProviderId) {
         throw new Error("Missing provider id.");
       }
-      const response = await axios.delete(`/services/${id}`, {
-        params: { providerId },
-      });
+      const response = await axios.delete(`/services/${id}`);
       return response.data;
     },
     onSuccess: () => {
