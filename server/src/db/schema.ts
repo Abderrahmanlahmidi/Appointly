@@ -13,9 +13,14 @@ import {
   numeric,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import type { AdapterAccount } from 'next-auth/adapters';
+import type { AdapterAccount } from '@auth/core/adapters';
 
 export const roleEnum = pgEnum('role_type', ['ADMIN', 'USER', 'PROVIDER']);
+export const approvalStatusEnum = pgEnum('approval_status', [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+]);
 export const statusEnum = pgEnum('appointment_status', [
   'PENDING',
   'CONFIRMED',
@@ -63,9 +68,12 @@ export const categories = pgTable('categories', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
+  status: approvalStatusEnum('status').default('PENDING').notNull(),
   userId: integer('user_id')
     .references(() => users.id)
     .notNull(),
+  moderatedByUserId: integer('moderated_by_user_id').references(() => users.id),
+  moderationNote: text('moderation_note'),
   ...timestamps,
 });
 
@@ -76,8 +84,13 @@ export const services = pgTable('services', {
   duration: integer('duration').notNull(),
   price: numeric('price', { precision: 10, scale: 2 }).notNull(),
   status: serviceStatusEnum('status').default('ACTIVE').notNull(),
+  approvalStatus: approvalStatusEnum('approval_status')
+    .default('PENDING')
+    .notNull(),
   categoryId: integer('category_id').references(() => categories.id),
   providerId: integer('provider_id').references(() => users.id),
+  moderatedByUserId: integer('moderated_by_user_id').references(() => users.id),
+  moderationNote: text('moderation_note'),
   ...timestamps,
 });
 
@@ -112,6 +125,7 @@ export const notifications = pgTable('notifications', {
   type: notificationTypeEnum('type'),
   isRead: boolean('is_read').default(false),
   userId: integer('user_id').references(() => users.id),
+  appointmentId: integer('appointment_id').references(() => appointments.id),
   ...timestamps,
 });
 
@@ -181,6 +195,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 
 export const categoryRelations = relations(categories, ({ one, many }) => ({
   user: one(users, { fields: [categories.userId], references: [users.id] }),
+  moderatedBy: one(users, {
+    fields: [categories.moderatedByUserId],
+    references: [users.id],
+  }),
   services: many(services),
 }));
 
@@ -193,6 +211,10 @@ export const serviceRelations = relations(services, ({ one, many }) => ({
     fields: [services.providerId],
     references: [users.id],
     relationName: 'providerServices',
+  }),
+  moderatedBy: one(users, {
+    fields: [services.moderatedByUserId],
+    references: [users.id],
   }),
   availabilities: many(availabilities),
   appointments: many(appointments),
@@ -227,5 +249,16 @@ export const appointmentRelations = relations(appointments, ({ one }) => ({
   availability: one(availabilities, {
     fields: [appointments.availabilityId],
     references: [availabilities.id],
+  }),
+}));
+
+export const notificationRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+  appointment: one(appointments, {
+    fields: [notifications.appointmentId],
+    references: [appointments.id],
   }),
 }));

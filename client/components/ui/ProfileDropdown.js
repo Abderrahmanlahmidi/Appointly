@@ -2,9 +2,19 @@
 import React from "react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
-import { ChevronDown, BriefcaseBusiness, LayoutGrid, LogOut, User } from "lucide-react";
+import {
+  Bell,
+  BriefcaseBusiness,
+  CalendarCheck2,
+  ChevronDown,
+  LayoutDashboard,
+  LayoutGrid,
+  LogOut,
+  User,
+} from "lucide-react";
 import Button from "./Button";
 import Popup from "./Popup";
+import { normalizeRole } from "../../lib/domain";
 
 export default function ProfileDropdown({ user }) {
   const fullName =
@@ -12,6 +22,7 @@ export default function ProfileDropdown({ user }) {
   const email = user?.email || "";
   const image = user?.image;
   const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
+  const role = normalizeRole(user?.role);
 
   return (
     <>
@@ -57,16 +68,44 @@ export default function ProfileDropdown({ user }) {
               <User className="h-4 w-4" />
               View profile
             </Button>
-            {String(user?.role ?? "").toUpperCase() === "PROVIDER" ? (
+            {role === "ADMIN" ? (
+              <Button
+                href="/admin/dashboard"
+                variant="soft"
+                className="w-full justify-start gap-3"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </Button>
+            ) : null}
+            <Button
+              href="/appointments"
+              variant="soft"
+              className="w-full justify-start gap-3"
+            >
+              <CalendarCheck2 className="h-4 w-4" />
+              Appointments
+            </Button>
+            <Button
+              href="/notifications"
+              variant="soft"
+              className="w-full justify-start gap-3"
+            >
+              <Bell className="h-4 w-4" />
+              Notifications
+            </Button>
+            {role !== "ADMIN" ? (
+              <Button
+                href="/categories"
+                variant="soft"
+                className="w-full justify-start gap-3"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Categories
+              </Button>
+            ) : null}
+            {role === "PROVIDER" ? (
               <>
-                <Button
-                  href="/categories"
-                  variant="soft"
-                  className="w-full justify-start gap-3"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  Categories
-                </Button>
                 <Button
                   href="/services"
                   variant="soft"
@@ -74,6 +113,14 @@ export default function ProfileDropdown({ user }) {
                 >
                   <BriefcaseBusiness className="h-4 w-4" />
                   Services
+                </Button>
+                <Button
+                  href="/availability"
+                  variant="soft"
+                  className="w-full justify-start gap-3"
+                >
+                  <CalendarCheck2 className="h-4 w-4" />
+                  Availability
                 </Button>
               </>
             ) : null}

@@ -15,11 +15,17 @@ import type { Request } from 'express';
 import { getOptionalAuthUser, requireAuthUser } from '../auth/request-auth';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { ModerateCategoryDto } from './dto/moderate-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 const parseScope = (value?: string) => {
   if (value === undefined) return undefined;
-  if (value !== 'owned') {
+  if (
+    value !== 'owned' &&
+    value !== 'mine' &&
+    value !== 'all' &&
+    value !== 'service-options'
+  ) {
     throw new BadRequestException('Invalid scope');
   }
   return value;
@@ -33,7 +39,7 @@ export class CategoriesController {
   async findAll(@Req() req: Request, @Query('scope') scope?: string) {
     const normalizedScope = parseScope(scope);
     const authUser =
-      normalizedScope === 'owned' ? await requireAuthUser(req) : null;
+      normalizedScope !== undefined ? await requireAuthUser(req) : null;
 
     return this.categoriesService.findAll(normalizedScope, authUser);
   }
@@ -55,6 +61,19 @@ export class CategoriesController {
     @Req() req: Request,
   ) {
     return this.categoriesService.update(id, body, await requireAuthUser(req));
+  }
+
+  @Patch(':id/moderate')
+  async moderate(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: ModerateCategoryDto,
+    @Req() req: Request,
+  ) {
+    return this.categoriesService.moderate(
+      id,
+      body,
+      await requireAuthUser(req),
+    );
   }
 
   @Delete(':id')

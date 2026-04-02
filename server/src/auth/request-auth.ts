@@ -3,8 +3,8 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { getToken } from '@auth/core/jwt';
 import type { Request } from 'express';
-import { getToken } from 'next-auth/jwt';
 
 const sessionCookieNames = [
   '__Secure-authjs.session-token',
@@ -39,6 +39,7 @@ const getSessionToken = async (req: Request) => {
       req: req as Parameters<typeof getToken>[0]['req'],
       secret,
       cookieName,
+      salt: cookieName,
     });
 
     if (token) {
@@ -96,3 +97,14 @@ export const requireProviderUser = (authUser: AuthUser) => {
 
   return authUser;
 };
+
+export const requireAdminUser = (authUser: AuthUser) => {
+  if (normalizeRole(authUser.role) !== 'ADMIN') {
+    throw new ForbiddenException('Admin access required');
+  }
+
+  return authUser;
+};
+
+export const isAdminUser = (authUser?: AuthUser | null) =>
+  normalizeRole(authUser?.role) === 'ADMIN';

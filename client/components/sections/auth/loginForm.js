@@ -26,6 +26,7 @@ export default function LoginForm() {
   } = useForm();
 
   const [loading, setLoading] = React.useState(false);
+  const [googleLoading, setGoogleLoading] = React.useState(false);
   const [formAlert, setFormAlert] = React.useState(null);
 
   const onSubmit = async (data) => {
@@ -64,6 +65,14 @@ export default function LoginForm() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSignIn = () => {
+    if (loading || googleLoading) return;
+
+    setFormAlert(null);
+    setGoogleLoading(true);
+    void signIn("google", { callbackUrl: "/" });
   };
 
   return (
@@ -196,10 +205,11 @@ export default function LoginForm() {
           <Button
             variant="soft"
             className="w-full"
-            onClick={() => signIn("google", { callbackUrl: "/" })}
+            disabled={loading || googleLoading}
+            onClick={handleGoogleSignIn}
           >
             <Chrome size={18} />
-            Continue with Google
+            {googleLoading ? "Redirecting to Google..." : "Continue with Google"}
           </Button>
 
           <p className="mt-4 text-center text-sm text-[#4B4B4B]">

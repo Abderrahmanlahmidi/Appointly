@@ -1,11 +1,13 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 import Button from "../../ui/Button";
 import ProfileDropdown from "../../ui/ProfileDropdown";
 
 export default function HomeNavbar({ session }) {
-  const user = session?.user;
+  const { data: liveSession } = useSession();
+  const user = liveSession?.user ?? session?.user;
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-[#E0E0E0] bg-white">

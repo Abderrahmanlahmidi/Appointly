@@ -44,13 +44,13 @@ export default function DataTable({
   return (
     <div
       className={[
-        "overflow-hidden rounded-2xl border border-[#E0E0E0] bg-white",
+        "min-w-0 max-w-full overflow-hidden rounded-2xl border border-[#E0E0E0] bg-white",
         wrapperClassName,
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="overflow-x-auto">
+      <div className="w-full overflow-x-auto">
         <table className={["min-w-full text-sm", tableClassName].join(" ")}>
           <thead className="bg-[#FAFAFA]">
             <tr className={headerRowClassName}>
@@ -91,7 +91,7 @@ export default function DataTable({
                     <td
                       key={column.key ?? columnIndex}
                       className={[
-                        "px-4 py-4 align-top text-sm text-[#0F0F0F]",
+                        "px-4 py-4 align-top text-sm text-[#0F0F0F] whitespace-normal break-words",
                         cellClassName,
                         resolveClassName(column.className, row, rowIndex),
                       ]

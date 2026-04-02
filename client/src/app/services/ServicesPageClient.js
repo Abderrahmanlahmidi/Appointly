@@ -9,8 +9,10 @@ import DataTable from "../../../components/ui/DataTable";
 import OverlayForm from "../../../components/ui/OverlayForm";
 import PageHeader from "../../../components/ui/PageHeader";
 import SearchInput from "../../../components/ui/SearchInput";
+import StatusBadge from "../../../components/ui/StatusBadge";
 import { useToast } from "../../../components/ui/Toast";
 import Popup from "../../../components/ui/Popup";
+import { formatPrice } from "../../../lib/domain";
 
 const fetchServices = async () => {
   const { data } = await axios.get("/services", {
@@ -21,7 +23,7 @@ const fetchServices = async () => {
 
 const fetchCategories = async () => {
   const { data } = await axios.get("/categories", {
-    params: { scope: "owned" },
+    params: { scope: "service-options" },
   });
   return data;
 };
@@ -68,8 +70,6 @@ export default function ServicesPage() {
 
   const providerId = Number(session?.user?.id);
   const hasProviderId = Number.isFinite(providerId) && providerId > 0;
-  const role = String(session?.user?.role ?? "").toLowerCase();
-  const isProvider = role === "provider";
 
   const {
     data: services = [],
@@ -83,22 +83,25 @@ export default function ServicesPage() {
   });
 
   const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
-    queryKey: ["categories"],
+    queryKey: ["categories", "service-options"],
     queryFn: fetchCategories,
     enabled: hasProviderId,
   });
 
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ["services"] });
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  };
+
   const createMutation = useMutation({
     mutationFn: async (values) => {
-      if (!hasProviderId) {
-        throw new Error("Missing provider id.");
-      }
       const response = await axios.post("/services", values);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
-      toast.success("Service created successfully.");
+      invalidateQueries();
+      toast.success("Service created and sent for review.");
       setOverlayOpen(false);
     },
     onError: (err) => {
@@ -108,15 +111,12 @@ export default function ServicesPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, values }) => {
-      if (!hasProviderId) {
-        throw new Error("Missing provider id.");
-      }
       const response = await axios.patch(`/services/${id}`, values);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
-      toast.success("Service updated successfully.");
+      invalidateQueries();
+      toast.success("Service updated and sent for review.");
       setOverlayOpen(false);
       setSelectedService(null);
     },
@@ -127,14 +127,11 @@ export default function ServicesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      if (!hasProviderId) {
-        throw new Error("Missing provider id.");
-      }
       const response = await axios.delete(`/services/${id}`);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+      invalidateQueries();
       toast.success("Service deleted.");
     },
     onError: (err) => {
@@ -143,30 +140,18 @@ export default function ServicesPage() {
   });
 
   const openCreate = () => {
-    if (!isProvider) {
-      toast.error("Only providers can manage services.");
-      return;
-    }
     setFormMode("create");
     setSelectedService(null);
     setOverlayOpen(true);
   };
 
   const openUpdate = (service) => {
-    if (!isProvider) {
-      toast.error("Only providers can manage services.");
-      return;
-    }
     setFormMode("update");
     setSelectedService(service);
     setOverlayOpen(true);
   };
 
   const openDeleteConfirm = (service) => {
-    if (!isProvider) {
-      toast.error("Only providers can manage services.");
-      return;
-    }
     setServiceToDelete(service);
     setDeleteConfirmOpen(true);
   };
@@ -177,30 +162,12 @@ export default function ServicesPage() {
   };
 
   const handleDelete = () => {
-    if (!isProvider) {
-      toast.error("Only providers can manage services.");
-      closeDeleteConfirm();
-      return;
-    }
-    if (!hasProviderId) {
-      toast.error("Please sign in to delete services.");
-      closeDeleteConfirm();
-      return;
-    }
     if (!serviceToDelete?.id) return;
     deleteMutation.mutate(serviceToDelete.id);
     closeDeleteConfirm();
   };
 
   const handleSubmit = (values, mode) => {
-    if (!isProvider) {
-      toast.error("Only providers can manage services.");
-      return;
-    }
-    if (!hasProviderId) {
-      toast.error("Please sign in to manage services.");
-      return;
-    }
     const payload = normalizePayload(values, mode);
     if (mode === "update" && selectedService?.id) {
       updateMutation.mutate({ id: selectedService.id, values: payload });
@@ -240,8 +207,13 @@ export default function ServicesPage() {
       key: "title",
       header: "Title",
       cell: (service) => (
-        <div className="text-sm font-semibold text-[#0F0F0F]">
-          {service.title}
+        <div>
+          <div className="text-sm font-semibold text-[#0F0F0F]">
+            {service.title}
+          </div>
+          <div className="mt-1 text-xs text-[#4B4B4B]">
+            {service.categoryName || "Uncategorized"}
+          </div>
         </div>
       ),
     },
@@ -265,50 +237,58 @@ export default function ServicesPage() {
       key: "price",
       header: "Price",
       cell: (service) => (
-        <span className="text-sm text-[#0F0F0F]">${service.price}</span>
+        <span className="text-sm text-[#0F0F0F]">
+          {formatPrice(service.price)}
+        </span>
       ),
     },
     {
       key: "status",
-      header: "Status",
+      header: "Visibility",
+      cell: (service) => <StatusBadge value={service.status} />,
+    },
+    {
+      key: "approvalStatus",
+      header: "Approval",
+      cell: (service) => <StatusBadge value={service.approvalStatus} />,
+    },
+    {
+      key: "moderationNote",
+      header: "Admin Note",
       cell: (service) => (
-        <span className="rounded-full border border-[#E0E0E0] px-2 py-1 text-xs font-semibold text-[#4B4B4B]">
-          {service.status}
-        </span>
+        <p className="text-sm text-[#4B4B4B]">
+          {service.moderationNote || "No admin note yet."}
+        </p>
       ),
     },
-    ...(isProvider
-      ? [
-          {
-            key: "actions",
-            header: "Actions",
-            headerClassName: "text-right",
-            className: "text-right",
-            cell: (service) => (
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="soft"
-                  size="sm"
-                  onClick={() => openUpdate(service)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="border-[#EA3A30] text-[#EA3A30] hover:bg-[#EA3A30] hover:text-white"
-                  disabled={deleteMutation.isPending}
-                  onClick={() => openDeleteConfirm(service)}
-                >
-                  {deleteMutation.isPending ? "Deleting..." : "Delete"}
-                </Button>
-              </div>
-            ),
-          },
-        ]
-      : []),
+    {
+      key: "actions",
+      header: "Actions",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (service) => (
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            type="button"
+            variant="soft"
+            size="sm"
+            onClick={() => openUpdate(service)}
+          >
+            Edit
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-[#EA3A30] text-[#EA3A30] hover:bg-[#EA3A30] hover:text-white"
+            disabled={deleteMutation.isPending}
+            onClick={() => openDeleteConfirm(service)}
+          >
+            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -316,28 +296,36 @@ export default function ServicesPage() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 py-12">
         <PageHeader
           title="Services"
-          subtitle="Create and manage your services."
+          subtitle="Create services, attach categories, and track admin approval."
           actions={
-            isProvider ? (
+            <div className="flex flex-wrap gap-3">
+              <Button href="/categories" variant="soft">
+                Request category
+              </Button>
               <Button type="button" onClick={openCreate}>
                 New service
               </Button>
-            ) : null
+            </div>
           }
         />
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchInput
-            data={services}
-            fields={["title", "description", "status"]}
-            onResults={(results, query) => {
-              setFilteredServices(results);
-              setSearchTerm(query);
-            }}
-            placeholder="Search services..."
-            className="w-full"
-          />
-        </div>
+        <SearchInput
+          data={services}
+          fields={[
+            "title",
+            "description",
+            "status",
+            "approvalStatus",
+            "categoryName",
+            "moderationNote",
+          ]}
+          onResults={(results, query) => {
+            setFilteredServices(results);
+            setSearchTerm(query);
+          }}
+          placeholder="Search services..."
+          className="w-full"
+        />
 
         {isLoading ? (
           <div className="rounded-2xl border border-[#E0E0E0] bg-white p-6 text-sm text-[#4B4B4B]">
@@ -360,97 +348,96 @@ export default function ServicesPage() {
         )}
       </div>
 
-      {isProvider ? (
-        <>
-          <OverlayForm
-            open={overlayOpen}
-            mode={formMode}
-            title={formMode === "update" ? "Update service" : "Create service"}
-            description="Fill in the service details below."
-            onCancel={() => {
-              setOverlayOpen(false);
-              setSelectedService(null);
-            }}
-            onSubmit={handleSubmit}
-            defaultValues={defaultValues}
-            loading={isSaving}
-            fields={[
-              {
-                name: "title",
-                label: "Service title",
-                placeholder: "e.g. Haircut",
-                rules: { required: "Title is required" },
-              },
-              {
-                name: "description",
-                label: "Description",
-                placeholder: "Optional description",
-              },
-              {
-                name: "duration",
-                label: "Duration (minutes)",
-                type: "number",
-                placeholder: "60",
-                rules: {
-                  required: "Duration is required",
-                  valueAsNumber: true,
-                  min: { value: 1, message: "Duration must be at least 1 minute" },
-                },
-              },
-              {
-                name: "price",
-                label: "Price",
-                type: "number",
-                placeholder: "50",
-                rules: {
-                  required: "Price is required",
-                  valueAsNumber: true,
-                  min: { value: 1, message: "Price must be positive" },
-                },
-              },
-              {
-                name: "status",
-                label: "Status",
-                type: "select",
-                placeholder: "Select status",
-                options: [
-                  { label: "Active", value: "ACTIVE" },
-                  { label: "Inactive", value: "INACTIVE" },
-                ],
-                rules: { required: "Status is required" },
-              },
-              {
-                name: "categoryId",
-                label: "Category",
-                type: "select",
-                placeholder: isCategoriesLoading
-                  ? "Loading categories..."
-                  : "Select category (optional)",
-                options: categories.map((category) => ({
-                  label: category.name,
-                  value: category.id,
-                })),
-                disabled: isCategoriesLoading,
-              },
-            ]}
-          />
+      <OverlayForm
+        open={overlayOpen}
+        mode={formMode}
+        title={formMode === "update" ? "Update service" : "Create service"}
+        description="Services are reviewed by an admin before they appear in the public catalog."
+        onCancel={() => {
+          setOverlayOpen(false);
+          setSelectedService(null);
+        }}
+        onSubmit={handleSubmit}
+        defaultValues={defaultValues}
+        loading={isSaving}
+        fields={[
+          {
+            name: "title",
+            label: "Service title",
+            placeholder: "e.g. Haircut",
+            rules: { required: "Title is required" },
+          },
+          {
+            name: "description",
+            label: "Description",
+            placeholder: "Optional description",
+          },
+          {
+            name: "duration",
+            label: "Duration (minutes)",
+            type: "number",
+            placeholder: "60",
+            rules: {
+              required: "Duration is required",
+              valueAsNumber: true,
+              min: { value: 1, message: "Duration must be at least 1 minute" },
+            },
+          },
+          {
+            name: "price",
+            label: "Price",
+            type: "number",
+            placeholder: "50",
+            rules: {
+              required: "Price is required",
+              valueAsNumber: true,
+              min: { value: 1, message: "Price must be positive" },
+            },
+          },
+          {
+            name: "status",
+            label: "Visibility status",
+            type: "select",
+            placeholder: "Select status",
+            options: [
+              { label: "Active", value: "ACTIVE" },
+              { label: "Inactive", value: "INACTIVE" },
+            ],
+            rules: { required: "Status is required" },
+          },
+          {
+            name: "categoryId",
+            label: "Category",
+            type: "select",
+            placeholder: isCategoriesLoading
+              ? "Loading categories..."
+              : "Select category (optional)",
+            options: categories.map((category) => ({
+              label:
+                category.status === "APPROVED"
+                  ? category.name
+                  : `${category.name} (${String(category.status ?? "").toLowerCase()})`,
+              value: category.id,
+            })),
+            disabled: isCategoriesLoading,
+          },
+        ]}
+      />
 
-          <Popup
-            open={deleteConfirmOpen}
-            title="Delete service?"
-            description={
-              serviceToDelete?.title
-                ? `Delete "${serviceToDelete.title}"? This cannot be undone.`
-                : "This action cannot be undone."
-            }
-            confirmText={deleteMutation.isPending ? "Deleting..." : "Delete"}
-            confirmVariant="outline"
-            confirmClassName="border-[#EA3A30] text-[#EA3A30] hover:bg-[#EA3A30] hover:text-white"
-            onCancel={closeDeleteConfirm}
-            onConfirm={handleDelete}
-          />
-        </>
-      ) : null}
+      <Popup
+        open={deleteConfirmOpen}
+        title="Delete service?"
+        description={
+          serviceToDelete?.title
+            ? `Delete "${serviceToDelete.title}"? This cannot be undone.`
+            : "This action cannot be undone."
+        }
+        confirmText={deleteMutation.isPending ? "Deleting..." : "Delete"}
+        confirmVariant="outline"
+        confirmClassName="border-[#EA3A30] text-[#EA3A30] hover:bg-[#EA3A30] hover:text-white"
+        onCancel={closeDeleteConfirm}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

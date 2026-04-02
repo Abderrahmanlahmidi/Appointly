@@ -14,6 +14,7 @@ const registerSchema = z
     lastname: z.string().trim().min(2, "Last name must be at least 2 characters"),
     email: z.string().trim().email("Invalid email address"),
     phone: z.string().trim().min(6, "Phone is required"),
+    role: z.enum(["USER", "PROVIDER"]).default("USER"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
@@ -58,7 +59,12 @@ export async function POST(req) {
   }
 
   const hashedPassword = await bcrypt.hash(parsed.data.password, 12);
-  const defaultRole = await ensureRole("USER", "Default role for standard users");
+  const selectedRole = await ensureRole(
+    parsed.data.role,
+    parsed.data.role === "PROVIDER"
+      ? "Service provider account"
+      : "Default role for standard users",
+  );
 
   await db.insert(users).values({
     firstName: parsed.data.firstname,
@@ -66,7 +72,7 @@ export async function POST(req) {
     email,
     password: hashedPassword,
     phone: parsed.data.phone,
-    roleId: defaultRole.id,
+    roleId: selectedRole.id,
   });
 
   return NextResponse.json({ message: "User created" });

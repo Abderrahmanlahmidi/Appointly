@@ -4,53 +4,46 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { type AuthUser, requireProviderUser } from '../auth/request-auth';
+import {
+  type AuthUser,
+  isAdminUser,
+  requireAdminUser,
+  requireProviderUser,
+} from '../auth/request-auth';
+import {
+  buildUserName,
+  normalizeOptionalText,
+  parseApprovalStatus,
+  parseOptionalId,
+  parsePositiveInteger,
+  parsePositivePrice,
+  parseRequiredText,
+} from '../common/domain.utils';
 import { DRIZZLE } from '../db/drizzle.module';
 import * as schema from '../db/schema';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateServiceDto } from './dto/create-service.dto';
+import { ModerateServiceDto } from './dto/moderate-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
 type ServiceInsert = typeof schema.services.$inferInsert;
-
 type ServiceStatus = 'ACTIVE' | 'INACTIVE';
-
-const normalizeOptionalText = (value?: string | null) => {
-  if (value === undefined) return undefined;
-  if (value === null) return null;
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
-};
-
-const parseOptionalId = (value: unknown, label: string) => {
-  if (value === undefined) return undefined;
-  if (value === null) return null;
-  const id = Number(value);
-  if (!Number.isFinite(id) || id <= 0) {
-    throw new BadRequestException(`Invalid ${label}`);
-  }
-  return id;
-};
-
-const parseDuration = (value: unknown) => {
-  const duration = Number(value);
-  if (
-    !Number.isFinite(duration) ||
-    !Number.isInteger(duration) ||
-    duration <= 0
-  ) {
-    throw new BadRequestException('Duration must be a positive integer');
-  }
-  return duration;
-};
-
-const parsePrice = (value: unknown) => {
-  const price = Number(value);
-  if (!Number.isFinite(price) || price <= 0) {
-    throw new BadRequestException('Price must be a positive number');
-  }
-  return price.toFixed(2);
+type ServiceRow = {
+  service: typeof schema.services.$inferSelect;
+  category: {
+    id: number | null;
+    name: string | null;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  } | null;
+  provider: {
+    id: number | null;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+    image: string | null;
+  } | null;
 };
 
 const parseStatus = (value?: string | null) => {
@@ -63,33 +56,98 @@ const parseStatus = (value?: string | null) => {
   return normalized as ServiceStatus;
 };
 
-const isProviderUser = (authUser?: AuthUser | null) =>
-  authUser && authUser.role === 'PROVIDER' ? authUser : null;
-
 @Injectable()
 export class ServicesService {
   constructor(
     @Inject(DRIZZLE)
     private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
-  private async ensureOwnedCategory(
+  private async getAdminUserIds(excludeUserId?: number) {
+    const adminUsers = await this.db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .innerJoin(schema.roles, eq(schema.users.roleId, schema.roles.id))
+      .where(eq(schema.roles.name, 'ADMIN'));
+
+    return adminUsers
+      .map((entry) => entry.id)
+      .filter((id) => id !== excludeUserId);
+  }
+
+  private serializeServiceRow(row: ServiceRow) {
+    return {
+      ...row.service,
+      categoryName: row.category?.name ?? null,
+      categoryStatus: row.category?.status ?? null,
+      providerName: buildUserName(row.provider ?? undefined),
+      providerEmail: row.provider?.email ?? null,
+    };
+  }
+
+  private isPubliclyVisible(row: ServiceRow) {
+    const categoryApproved =
+      row.service.categoryId === null || row.category?.status === 'APPROVED';
+
+    return (
+      row.service.status === 'ACTIVE' &&
+      row.service.approvalStatus === 'APPROVED' &&
+      categoryApproved
+    );
+  }
+
+  private async getServiceRowById(id: number) {
+    const [row] = await this.db
+      .select({
+        service: schema.services,
+        category: {
+          id: schema.categories.id,
+          name: schema.categories.name,
+          status: schema.categories.status,
+        },
+        provider: {
+          id: schema.users.id,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+          email: schema.users.email,
+          image: schema.users.image,
+        },
+      })
+      .from(schema.services)
+      .leftJoin(
+        schema.categories,
+        eq(schema.services.categoryId, schema.categories.id),
+      )
+      .leftJoin(schema.users, eq(schema.services.providerId, schema.users.id))
+      .where(eq(schema.services.id, id));
+
+    return row;
+  }
+
+  private async ensureCategoryAvailableForProvider(
     categoryId: number,
     providerId: number,
   ): Promise<number> {
     const [category] = await this.db
-      .select({ id: schema.categories.id })
+      .select({
+        id: schema.categories.id,
+        userId: schema.categories.userId,
+        status: schema.categories.status,
+      })
       .from(schema.categories)
-      .where(
-        and(
-          eq(schema.categories.id, categoryId),
-          eq(schema.categories.userId, providerId),
-        ),
-      );
+      .where(eq(schema.categories.id, categoryId));
 
     if (!category) {
+      throw new BadRequestException('Category not found');
+    }
+
+    const canUseCategory =
+      category.status === 'APPROVED' || category.userId === providerId;
+
+    if (!canUseCategory) {
       throw new BadRequestException(
-        'Category must belong to the authenticated provider',
+        'Only approved categories or your own submitted categories can be assigned',
       );
     }
 
@@ -106,137 +164,165 @@ export class ServicesService {
       return categoryId;
     }
 
-    return this.ensureOwnedCategory(categoryId, providerId);
+    return this.ensureCategoryAvailableForProvider(categoryId, providerId);
   }
 
-  async findAll(scope?: 'owned', authUser?: AuthUser | null) {
+  async findAll(scope?: 'owned' | 'all', authUser?: AuthUser | null) {
     if (scope === 'owned') {
       const providerUser = requireProviderUser(authUser as AuthUser);
-      return this.db
-        .select()
+      const rows = await this.db
+        .select({
+          service: schema.services,
+          category: {
+            id: schema.categories.id,
+            name: schema.categories.name,
+            status: schema.categories.status,
+          },
+          provider: {
+            id: schema.users.id,
+            firstName: schema.users.firstName,
+            lastName: schema.users.lastName,
+            email: schema.users.email,
+            image: schema.users.image,
+          },
+        })
         .from(schema.services)
-        .where(eq(schema.services.providerId, providerUser.id));
+        .leftJoin(
+          schema.categories,
+          eq(schema.services.categoryId, schema.categories.id),
+        )
+        .leftJoin(schema.users, eq(schema.services.providerId, schema.users.id))
+        .where(eq(schema.services.providerId, providerUser.id))
+        .orderBy(desc(schema.services.createdAt));
+
+      return rows.map((row) => ({
+        ...this.serializeServiceRow(row),
+        canManage: true,
+      }));
     }
 
-    return this.db
-      .select()
+    if (scope === 'all') {
+      requireAdminUser(authUser as AuthUser);
+      const rows = await this.db
+        .select({
+          service: schema.services,
+          category: {
+            id: schema.categories.id,
+            name: schema.categories.name,
+            status: schema.categories.status,
+          },
+          provider: {
+            id: schema.users.id,
+            firstName: schema.users.firstName,
+            lastName: schema.users.lastName,
+            email: schema.users.email,
+            image: schema.users.image,
+          },
+        })
+        .from(schema.services)
+        .leftJoin(
+          schema.categories,
+          eq(schema.services.categoryId, schema.categories.id),
+        )
+        .leftJoin(schema.users, eq(schema.services.providerId, schema.users.id))
+        .orderBy(desc(schema.services.createdAt));
+
+      return rows.map((row) => ({
+        ...this.serializeServiceRow(row),
+        canManage: true,
+      }));
+    }
+
+    const rows = await this.db
+      .select({
+        service: schema.services,
+        category: {
+          id: schema.categories.id,
+          name: schema.categories.name,
+          status: schema.categories.status,
+        },
+        provider: {
+          id: schema.users.id,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+          email: schema.users.email,
+          image: schema.users.image,
+        },
+      })
       .from(schema.services)
-      .where(eq(schema.services.status, 'ACTIVE'));
+      .leftJoin(
+        schema.categories,
+        eq(schema.services.categoryId, schema.categories.id),
+      )
+      .leftJoin(schema.users, eq(schema.services.providerId, schema.users.id))
+      .where(
+        and(
+          eq(schema.services.status, 'ACTIVE'),
+          eq(schema.services.approvalStatus, 'APPROVED'),
+        ),
+      )
+      .orderBy(desc(schema.services.createdAt));
+
+    return rows
+      .filter((row) => this.isPubliclyVisible(row))
+      .map((row) => ({
+        ...this.serializeServiceRow(row),
+        canManage: false,
+      }));
   }
 
   async findOne(id: number, authUser?: AuthUser | null) {
-    const providerUser = isProviderUser(authUser);
-    const [ownedService] = providerUser
-      ? await this.db
-          .select()
-          .from(schema.services)
-          .where(
-            and(
-              eq(schema.services.id, id),
-              eq(schema.services.providerId, providerUser.id),
-            ),
-          )
-      : [];
-
-    const [service] =
-      ownedService !== undefined
-        ? [ownedService]
-        : await this.db
-            .select()
-            .from(schema.services)
-            .where(
-              and(
-                eq(schema.services.id, id),
-                eq(schema.services.status, 'ACTIVE'),
-              ),
-            );
-
-    if (!service) {
-      throw new NotFoundException('Service not found');
-    }
-
-    return service;
-  }
-
-  async findOneWithCreator(id: number, authUser?: AuthUser | null) {
-    const providerUser = isProviderUser(authUser);
-    const [ownedRow] = providerUser
-      ? await this.db
-          .select({
-            service: schema.services,
-            creator: {
-              id: schema.users.id,
-              firstName: schema.users.firstName,
-              lastName: schema.users.lastName,
-              image: schema.users.image,
-            },
-          })
-          .from(schema.services)
-          .leftJoin(
-            schema.users,
-            eq(schema.services.providerId, schema.users.id),
-          )
-          .where(
-            and(
-              eq(schema.services.id, id),
-              eq(schema.services.providerId, providerUser.id),
-            ),
-          )
-      : [];
-
-    const [row] =
-      ownedRow !== undefined
-        ? [ownedRow]
-        : await this.db
-            .select({
-              service: schema.services,
-              creator: {
-                id: schema.users.id,
-                firstName: schema.users.firstName,
-                lastName: schema.users.lastName,
-                image: schema.users.image,
-              },
-            })
-            .from(schema.services)
-            .leftJoin(
-              schema.users,
-              eq(schema.services.providerId, schema.users.id),
-            )
-            .where(
-              and(
-                eq(schema.services.id, id),
-                eq(schema.services.status, 'ACTIVE'),
-              ),
-            );
-
+    const row = await this.getServiceRowById(id);
     if (!row?.service) {
       throw new NotFoundException('Service not found');
     }
 
-    const createdBy = row.creator?.id
+    const isOwner = row.service.providerId === authUser?.id;
+    const canAccess =
+      isOwner || isAdminUser(authUser) || this.isPubliclyVisible(row);
+
+    if (!canAccess) {
+      throw new NotFoundException('Service not found');
+    }
+
+    return {
+      ...this.serializeServiceRow(row),
+      canManage: Boolean(isOwner || isAdminUser(authUser)),
+    };
+  }
+
+  async findOneWithCreator(id: number, authUser?: AuthUser | null) {
+    const row = await this.getServiceRowById(id);
+    if (!row?.service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const isOwner = row.service.providerId === authUser?.id;
+    const canAccess =
+      isOwner || isAdminUser(authUser) || this.isPubliclyVisible(row);
+
+    if (!canAccess) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const createdBy = row.provider?.id
       ? {
-          ...row.creator,
-          name:
-            `${row.creator.firstName ?? ''} ${row.creator.lastName ?? ''}`.trim() ||
-            null,
+          ...row.provider,
+          name: buildUserName(row.provider),
         }
       : null;
 
     return {
-      ...row.service,
+      ...this.serializeServiceRow(row),
       createdBy,
     };
   }
 
   async create(values: CreateServiceDto, authUser: AuthUser) {
     const providerUser = requireProviderUser(authUser);
-    const title = values?.title?.trim();
-    if (!title) {
-      throw new BadRequestException('Title is required');
-    }
-
-    const duration = parseDuration(values?.duration);
-    const price = parsePrice(values?.price);
+    const title = parseRequiredText(values?.title, 'Title');
+    const duration = parsePositiveInteger(values?.duration, 'Duration');
+    const price = parsePositivePrice(values?.price);
     const status = parseStatus(values?.status ?? undefined);
     const categoryId = await this.resolveCategoryId(
       values?.categoryId,
@@ -259,18 +345,46 @@ export class ServicesService {
       .values(insertValues)
       .returning();
 
-    return created;
+    const adminUserIds = await this.getAdminUserIds(providerUser.id);
+
+    await this.notificationsService.createMany([
+      {
+        userId: providerUser.id,
+        title: 'Service submitted',
+        message: `Your service "${title}" was created and sent for admin review.`,
+        type: 'INFO',
+      },
+      ...adminUserIds.map((adminId) => ({
+        userId: adminId,
+        title: 'New service submission',
+        message: `A new service "${title}" was submitted and is waiting for review.`,
+        type: 'ALERT' as const,
+      })),
+    ]);
+
+    const row = await this.getServiceRowById(created.id);
+    return row
+      ? {
+          ...this.serializeServiceRow(row),
+          canManage: true,
+        }
+      : created;
   }
 
   async update(id: number, values: UpdateServiceDto, authUser: AuthUser) {
     const providerUser = requireProviderUser(authUser);
+    const existingRow = await this.getServiceRowById(id);
+    if (
+      !existingRow?.service ||
+      existingRow.service.providerId !== providerUser.id
+    ) {
+      throw new NotFoundException('Service not found');
+    }
+
     const updates: Partial<ServiceInsert> = {};
 
     if (Object.prototype.hasOwnProperty.call(values, 'title')) {
-      const title = values?.title?.trim();
-      if (!title) {
-        throw new BadRequestException('Title is required');
-      }
+      const title = parseRequiredText(values?.title, 'Title');
       updates.title = title;
     }
 
@@ -282,11 +396,11 @@ export class ServicesService {
     }
 
     if (Object.prototype.hasOwnProperty.call(values, 'duration')) {
-      updates.duration = parseDuration(values?.duration);
+      updates.duration = parsePositiveInteger(values?.duration, 'Duration');
     }
 
     if (Object.prototype.hasOwnProperty.call(values, 'price')) {
-      updates.price = parsePrice(values?.price);
+      updates.price = parsePositivePrice(values?.price);
     }
 
     if (Object.prototype.hasOwnProperty.call(values, 'status')) {
@@ -310,34 +424,139 @@ export class ServicesService {
       throw new BadRequestException('No valid fields to update');
     }
 
-    const whereClause = and(
-      eq(schema.services.id, id),
-      eq(schema.services.providerId, providerUser.id),
-    );
+    updates.approvalStatus = 'PENDING';
+    updates.moderatedByUserId = null;
+    updates.moderationNote = null;
 
     const [updated] = await this.db
       .update(schema.services)
       .set(updates)
-      .where(whereClause)
+      .where(eq(schema.services.id, id))
       .returning();
 
     if (!updated) {
       throw new NotFoundException('Service not found');
     }
 
-    return updated;
+    const adminUserIds = await this.getAdminUserIds(providerUser.id);
+    await this.notificationsService.createMany([
+      {
+        userId: providerUser.id,
+        title: 'Service resubmitted',
+        message: `Your service "${updated.title}" was updated and sent back for admin review.`,
+        type: 'INFO',
+      },
+      ...adminUserIds.map((adminId) => ({
+        userId: adminId,
+        title: 'Service updated for review',
+        message: `The service "${updated.title}" was updated and needs a new review.`,
+        type: 'ALERT' as const,
+      })),
+    ]);
+
+    const row = await this.getServiceRowById(updated.id);
+    return row
+      ? {
+          ...this.serializeServiceRow(row),
+          canManage: true,
+        }
+      : updated;
+  }
+
+  async moderate(id: number, values: ModerateServiceDto, authUser: AuthUser) {
+    const adminUser = requireAdminUser(authUser);
+    const existingRow = await this.getServiceRowById(id);
+
+    if (!existingRow?.service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const approvalStatus = parseApprovalStatus(values?.approvalStatus);
+    const moderationNote =
+      normalizeOptionalText(values?.moderationNote) ?? null;
+
+    if (approvalStatus === 'APPROVED' && existingRow.service.categoryId) {
+      if (existingRow.category?.status !== 'APPROVED') {
+        throw new BadRequestException(
+          'A service can only be approved after its category is approved',
+        );
+      }
+    }
+
+    const [updated] = await this.db
+      .update(schema.services)
+      .set({
+        approvalStatus,
+        moderationNote,
+        moderatedByUserId: approvalStatus === 'PENDING' ? null : adminUser.id,
+      })
+      .where(eq(schema.services.id, id))
+      .returning();
+
+    await this.notificationsService.createMany([
+      {
+        userId: existingRow.service.providerId,
+        title:
+          approvalStatus === 'APPROVED'
+            ? 'Service approved'
+            : approvalStatus === 'REJECTED'
+              ? 'Service rejected'
+              : 'Service review updated',
+        message:
+          approvalStatus === 'APPROVED'
+            ? `Your service "${existingRow.service.title}" is now approved and visible to clients.`
+            : approvalStatus === 'REJECTED'
+              ? `Your service "${existingRow.service.title}" was rejected.${moderationNote ? ` Note: ${moderationNote}` : ''}`
+              : `Your service "${existingRow.service.title}" was moved back to pending review.`,
+        type: approvalStatus === 'REJECTED' ? 'ALERT' : 'INFO',
+      },
+    ]);
+
+    const row = await this.getServiceRowById(updated.id);
+    return row
+      ? {
+          ...this.serializeServiceRow(row),
+          canManage: true,
+        }
+      : updated;
   }
 
   async remove(id: number, authUser: AuthUser) {
-    const providerUser = requireProviderUser(authUser);
-    const whereClause = and(
-      eq(schema.services.id, id),
-      eq(schema.services.providerId, providerUser.id),
-    );
+    const row = await this.getServiceRowById(id);
+    if (!row?.service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const isOwner = row.service.providerId === authUser.id;
+    if (!isOwner && !isAdminUser(authUser)) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const [linkedAvailability] = await this.db
+      .select({ id: schema.availabilities.id })
+      .from(schema.availabilities)
+      .where(eq(schema.availabilities.serviceId, id));
+
+    if (linkedAvailability) {
+      throw new BadRequestException(
+        'This service cannot be deleted while availability slots exist',
+      );
+    }
+
+    const [linkedAppointment] = await this.db
+      .select({ id: schema.appointments.id })
+      .from(schema.appointments)
+      .where(eq(schema.appointments.serviceId, id));
+
+    if (linkedAppointment) {
+      throw new BadRequestException(
+        'This service cannot be deleted while appointments exist',
+      );
+    }
 
     const [deleted] = await this.db
       .delete(schema.services)
-      .where(whereClause)
+      .where(eq(schema.services.id, id))
       .returning();
 
     if (!deleted) {

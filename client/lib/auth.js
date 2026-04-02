@@ -17,6 +17,32 @@ import { ensureRole, normalizeRoleName } from "./roles";
 const normalizeEmail = (value) =>
   typeof value === "string" ? value.trim().toLowerCase() : "";
 
+const getDbUserWithRole = async ({ idValue, emailValue }) => {
+  const userId = Number(idValue);
+  const normalizedEmail = normalizeEmail(emailValue);
+
+  let dbUser =
+    Number.isFinite(userId) && userId > 0
+      ? await db.query.users.findFirst({
+          where: eq(users.id, userId),
+        })
+      : null;
+
+  if (!dbUser && normalizedEmail) {
+    dbUser = await db.query.users.findFirst({
+      where: sql`lower(${users.email}) = ${normalizedEmail}`,
+    });
+  }
+
+  const dbRole = dbUser?.roleId
+    ? await db.query.roles.findFirst({
+        where: eq(roles.id, dbUser.roleId),
+      })
+    : null;
+
+  return { dbUser, dbRole };
+};
+
 const baseAdapter = DrizzleAdapter(db, {
   usersTable: users,
   accountsTable: accounts,
@@ -64,9 +90,11 @@ const adapter = {
 
 export const authOptions = {
   adapter,
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
   },
+  trustHost: true,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -126,22 +154,17 @@ export const authOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        const dbUser = await db.query.users.findFirst({
-          where: eq(users.id, Number(user.id)),
-        });
+      const { dbUser, dbRole } = await getDbUserWithRole({
+        idValue: user?.id ?? token.id ?? token.sub,
+        emailValue: user?.email ?? token.email,
+      });
 
-        const dbRole = dbUser?.roleId
-          ? await db.query.roles.findFirst({
-              where: eq(roles.id, dbUser.roleId),
-            })
-          : null;
-
-        token.id = dbUser?.id;
-        token.email = dbUser?.email;
-        token.firstName = dbUser?.firstName;
-        token.lastName = dbUser?.lastName;
-        token.image = dbUser?.image;
+      if (dbUser) {
+        token.id = dbUser.id;
+        token.email = dbUser.email;
+        token.firstName = dbUser.firstName;
+        token.lastName = dbUser.lastName;
+        token.image = dbUser.image;
         token.role = normalizeRoleName(dbRole?.name);
       }
 
@@ -150,13 +173,18 @@ export const authOptions = {
 
     async session({ session, token }) {
       if (session.user) {
+        const { dbUser, dbRole } = await getDbUserWithRole({
+          idValue: token.id ?? token.sub,
+          emailValue: token.email,
+        });
+
         session.user = {
-          id: token.id ?? 0,
-          email: token.email ?? "",
-          image: token.image ?? "",
-          firstName: token.firstName ?? "",
-          lastName: token.lastName ?? "",
-          role: normalizeRoleName(token.role),
+          id: dbUser?.id ?? token.id ?? 0,
+          email: dbUser?.email ?? token.email ?? "",
+          image: dbUser?.image ?? token.image ?? "",
+          firstName: dbUser?.firstName ?? token.firstName ?? "",
+          lastName: dbUser?.lastName ?? token.lastName ?? "",
+          role: normalizeRoleName(dbRole?.name ?? token.role),
         };
       }
 

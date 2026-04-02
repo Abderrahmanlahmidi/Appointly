@@ -13,13 +13,14 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { getOptionalAuthUser, requireAuthUser } from '../auth/request-auth';
+import { ModerateServiceDto } from './dto/moderate-service.dto';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
 const parseScope = (value?: string) => {
   if (value === undefined) return undefined;
-  if (value !== 'owned') {
+  if (value !== 'owned' && value !== 'all') {
     throw new BadRequestException('Invalid scope');
   }
   return value;
@@ -32,8 +33,7 @@ export class ServicesController {
   @Get()
   async findAll(@Req() req: Request, @Query('scope') scope?: string) {
     const normalizedScope = parseScope(scope);
-    const authUser =
-      normalizedScope === 'owned' ? await requireAuthUser(req) : null;
+    const authUser = normalizedScope ? await requireAuthUser(req) : null;
 
     return this.servicesService.findAll(normalizedScope, authUser);
   }
@@ -66,6 +66,15 @@ export class ServicesController {
     @Req() req: Request,
   ) {
     return this.servicesService.update(id, body, await requireAuthUser(req));
+  }
+
+  @Patch(':id/moderate')
+  async moderate(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: ModerateServiceDto,
+    @Req() req: Request,
+  ) {
+    return this.servicesService.moderate(id, body, await requireAuthUser(req));
   }
 
   @Delete(':id')

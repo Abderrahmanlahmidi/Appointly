@@ -20,6 +20,9 @@ import {
   Receipt,
 } from "lucide-react";
 
+const roleSelectClassName =
+  "mt-2 w-full rounded-xl border-2 border-[#E0E0E0] bg-white px-4 py-3 text-sm text-[#0F0F0F] focus:border-[#0F0F0F] focus:outline-none focus:ring-4 focus:ring-black/10";
+
 export default function RegisterForm() {
   const router = useRouter();
 
@@ -31,6 +34,7 @@ export default function RegisterForm() {
   } = useForm();
 
   const [formAlert, setFormAlert] = React.useState(null);
+  const [googleLoading, setGoogleLoading] = React.useState(false);
 
   const mutation = useMutation({
     mutationFn: async (data) => {
@@ -59,6 +63,14 @@ export default function RegisterForm() {
   const onSubmit = (data) => {
     setFormAlert(null);
     mutation.mutate(data);
+  };
+
+  const handleGoogleSignIn = () => {
+    if (mutation.isPending || googleLoading) return;
+
+    setFormAlert(null);
+    setGoogleLoading(true);
+    void signIn("google", { callbackUrl: "/" });
   };
 
   const password = useWatch({
@@ -134,6 +146,21 @@ export default function RegisterForm() {
           ) : null}
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
+            <div>
+              <label className="text-xs font-medium text-[#2D2D2D]" htmlFor="role">
+                Account type
+              </label>
+              <select
+                id="role"
+                className={roleSelectClassName}
+                defaultValue="USER"
+                {...register("role")}
+              >
+                <option value="USER">Client</option>
+                <option value="PROVIDER">Service provider</option>
+              </select>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="text-xs font-medium text-[#2D2D2D]" htmlFor="firstname">
@@ -265,10 +292,11 @@ export default function RegisterForm() {
           <Button
             variant="soft"
             className="w-full"
-            onClick={() => signIn("google", { callbackUrl: "/" })}
+            disabled={mutation.isPending || googleLoading}
+            onClick={handleGoogleSignIn}
           >
             <Chrome size={18} />
-            Continue with Google
+            {googleLoading ? "Redirecting to Google..." : "Continue with Google"}
           </Button>
 
           <p className="mt-4 text-center text-sm text-[#4B4B4B]">

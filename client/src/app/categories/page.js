@@ -1,7 +1,7 @@
 import CategoriesPageClient from "./CategoriesPageClient";
-import { requireProvider } from "../../../lib/route-guards";
+import { requireAuthenticatedUser } from "../../../lib/route-guards";
 
 export default async function CategoriesPage() {
-  await requireProvider("/categories");
+  await requireAuthenticatedUser("/categories");
   return <CategoriesPageClient />;
 }
