@@ -1,6 +1,8 @@
 "use server";
 import { createHash } from "node:crypto";
+import { AuthError } from "next-auth";
 import { db } from "../../../lib/db";
+import { signIn } from "../../../lib/auth";
 import { users, verificationTokens } from "../../../lib/schema";
 import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -41,6 +43,48 @@ const buildResetLink = (token) => {
   url.searchParams.set("token", token);
   return url.toString();
 };
+
+export async function loginWithCredentials({
+  email,
+  password,
+  redirectTo = "/",
+} = {}) {
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPassword =
+    typeof password === "string" ? password : "";
+
+  if (!normalizedEmail || !normalizedPassword) {
+    return { error: "Email and password are required." };
+  }
+
+  try {
+    await signIn("credentials", {
+      redirect: false,
+      redirectTo,
+      email: normalizedEmail,
+      password: normalizedPassword,
+    });
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      if (error.type === "CredentialsSignin") {
+        return { error: "Invalid email or password." };
+      }
+
+      console.error("Credentials login error:", error);
+
+      return {
+        error:
+          process.env.NODE_ENV === "development"
+            ? error.message
+            : "Please try again in a moment.",
+      };
+    }
+
+    throw error;
+  }
+}
 
 export async function requestPasswordReset(email) {
   try {

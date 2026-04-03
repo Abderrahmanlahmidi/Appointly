@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import axios from "../../../../../lib/axios";
 import Button from "../../../../../components/ui/Button";
 import PageHeader from "../../../../../components/ui/PageHeader";
@@ -29,6 +30,7 @@ const parseServiceId = (value) => {
 
 export default function ServiceDetailsPage() {
   const params = useParams();
+  const { data: session } = useSession();
   const serviceId = parseServiceId(params?.serviceId);
   const hasValidServiceId = Number.isFinite(serviceId) && serviceId > 0;
 
@@ -54,6 +56,26 @@ export default function ServiceDetailsPage() {
 
   const createdBy = service?.createdBy;
   const creatorFullName = createdBy?.name || "Unknown provider";
+  const currentUserId = Number(session?.user?.id);
+  const currentRole = String(session?.user?.role ?? "")
+    .trim()
+    .toUpperCase();
+  const isOwnService =
+    currentUserId > 0 && currentUserId === Number(createdBy?.id);
+  const canMessageProvider =
+    Boolean(createdBy?.id) &&
+    currentRole === "USER" &&
+    !isOwnService;
+  const messageProviderHref = session?.user?.id
+    ? `/messages?serviceId=${serviceId}`
+    : `/login?callbackUrl=${encodeURIComponent(
+        `/messages?serviceId=${serviceId}`
+      )}`;
+  const bookServiceHref = session?.user?.id
+    ? `/appointments/create?serviceId=${service?.id}`
+    : `/login?callbackUrl=${encodeURIComponent(
+        `/appointments/create?serviceId=${service?.id}`
+      )}`;
 
   return (
     <div className="min-h-screen bg-white text-[#0F0F0F]">
@@ -136,8 +158,21 @@ export default function ServiceDetailsPage() {
               </div>
 
               <div className="mt-6 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-                <div className="text-xs uppercase tracking-wide text-[#7A7A7A]">
-                  Provider
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-xs uppercase tracking-wide text-[#7A7A7A]">
+                    Provider
+                  </div>
+                  {createdBy ? (
+                    canMessageProvider ? (
+                      <Button href={messageProviderHref} variant="outline" size="sm">
+                        Message provider
+                      </Button>
+                    ) : !session?.user?.id ? (
+                      <Button href={messageProviderHref} variant="soft" size="sm">
+                        Sign in to message
+                      </Button>
+                    ) : null
+                  ) : null}
                 </div>
 
                 {createdBy ? (
@@ -181,9 +216,15 @@ export default function ServiceDetailsPage() {
                     Pick one of the next open slots or continue to the booking page.
                   </p>
                 </div>
-                <Button href={`/appointments/create?serviceId=${service?.id}`}>
-                  Book this service
-                </Button>
+                {isOwnService ? (
+                  <div className="rounded-xl border border-[#F5C2C0] bg-white px-4 py-3 text-sm text-[#B42318]">
+                    You cannot book your own service.
+                  </div>
+                ) : (
+                  <Button href={bookServiceHref}>
+                    {session?.user?.id ? "Book this service" : "Sign in to book"}
+                  </Button>
+                )}
               </div>
 
               {slotsLoading ? (

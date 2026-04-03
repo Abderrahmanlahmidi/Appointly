@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import Button from "../../ui/Button";
+import NotificationBellButton from "../../ui/NotificationBellButton";
 import ProfileDropdown from "../../ui/ProfileDropdown";
 
 export default function HomeNavbar({ session }) {
@@ -44,7 +45,10 @@ export default function HomeNavbar({ session }) {
 
         <div className="flex items-center gap-3">
           {user ? (
-            <ProfileDropdown user={user} />
+            <>
+              <NotificationBellButton userId={user?.id} />
+              <ProfileDropdown user={user} />
+            </>
           ) : (
             <>
               <Button href="/login" variant="link">

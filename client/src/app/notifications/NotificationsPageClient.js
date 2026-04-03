@@ -2,20 +2,44 @@
 
 import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import axios from "../../../lib/axios";
 import Button from "../../../components/ui/Button";
 import PageHeader from "../../../components/ui/PageHeader";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { useToast } from "../../../components/ui/Toast";
 import { formatDateTime } from "../../../lib/domain";
+import {
+  fetchNotifications,
+  getNotificationHref,
+  getNotificationState,
+  getNotificationTargetLabel,
+  getUnreadNotificationCount,
+} from "../../../lib/notifications";
 
-const fetchNotifications = async () => {
-  const { data } = await axios.get("/notifications");
-  return data;
+const getNotificationCardClassName = (notification, state) => {
+  if (state === "CONFIRMED") {
+    return notification.isRead
+      ? "border-[#BDE5D3] bg-white"
+      : "border-[#BDE5D3] bg-[#F0FBF5]";
+  }
+
+  if (state === "CANCELLED") {
+    return notification.isRead
+      ? "border-[#F5C2C0] bg-white"
+      : "border-[#F5C2C0] bg-[#FFF5F4]";
+  }
+
+  return notification.isRead
+    ? "border-[#E0E0E0] bg-white"
+    : "border-[#CFE2FF] bg-[#F8FBFF]";
 };
 
 export default function NotificationsPageClient() {
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
   const { toast } = useToast();
 
   const {
@@ -59,7 +83,21 @@ export default function NotificationsPageClient() {
     },
   });
 
-  const unreadCount = notifications.filter((item) => !item.isRead).length;
+  const unreadCount = getUnreadNotificationCount(notifications);
+
+  const handleNotificationNavigation = async (notification, href) => {
+    if (!href) return;
+
+    if (!notification.isRead) {
+      try {
+        await markReadMutation.mutateAsync(notification.id);
+      } catch {
+        // The mutation toast already explains the failure.
+      }
+    }
+
+    router.push(href);
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#0F0F0F]">
@@ -96,52 +134,101 @@ export default function NotificationsPageClient() {
           </div>
         ) : notifications.length ? (
           <div className="grid gap-4">
-            {notifications.map((notification) => (
-              <article
-                key={notification.id}
-                className={`rounded-2xl border p-5 ${
-                  notification.isRead
-                    ? "border-[#E0E0E0] bg-white"
-                    : "border-[#CFE2FF] bg-[#F8FBFF]"
-                }`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-lg font-semibold text-[#0F0F0F]">
-                        {notification.title}
-                      </h2>
-                      <StatusBadge
-                        value={notification.isRead ? "READ" : "UNREAD"}
-                        toneMap={{
-                          READ: "border-[#E0E0E0] bg-[#F7F7F7] text-[#4B4B4B]",
-                          UNREAD:
-                            "border-[#CFE2FF] bg-[#EEF4FF] text-[#1F4ED8]",
-                        }}
-                      />
-                    </div>
-                    <p className="mt-3 text-sm text-[#4B4B4B]">
-                      {notification.message}
-                    </p>
-                    <div className="mt-3 text-xs text-[#7A7A7A]">
-                      {formatDateTime(notification.createdAt)}
-                    </div>
-                  </div>
+            {notifications.map((notification) => {
+              const notificationState = getNotificationState(notification);
+              const notificationHref = getNotificationHref(
+                notification,
+                session?.user?.role
+              );
+              const notificationTargetLabel =
+                getNotificationTargetLabel(notificationHref);
 
-                  {!notification.isRead ? (
-                    <Button
-                      type="button"
-                      variant="soft"
-                      size="sm"
-                      disabled={markReadMutation.isPending}
-                      onClick={() => markReadMutation.mutate(notification.id)}
-                    >
-                      Mark as read
-                    </Button>
-                  ) : null}
-                </div>
-              </article>
-            ))}
+              return (
+                <article
+                  key={notification.id}
+                  className={[
+                    "rounded-2xl border p-5",
+                    getNotificationCardClassName(notification, notificationState),
+                    notificationHref
+                      ? "cursor-pointer transition hover:-translate-y-0.5 hover:shadow-sm"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  role={notificationHref ? "button" : undefined}
+                  tabIndex={notificationHref ? 0 : undefined}
+                  onClick={() =>
+                    notificationHref
+                      ? void handleNotificationNavigation(
+                          notification,
+                          notificationHref
+                        )
+                      : undefined
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      !notificationHref ||
+                      (event.key !== "Enter" && event.key !== " ")
+                    ) {
+                      return;
+                    }
+
+                    event.preventDefault();
+                    void handleNotificationNavigation(notification, notificationHref);
+                  }}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h2 className="text-lg font-semibold text-[#0F0F0F]">
+                          {notification.title}
+                        </h2>
+                        <StatusBadge
+                          value={notification.isRead ? "READ" : "UNREAD"}
+                          toneMap={{
+                            READ: "border-[#E0E0E0] bg-[#F7F7F7] text-[#4B4B4B]",
+                            UNREAD:
+                              "border-[#CFE2FF] bg-[#EEF4FF] text-[#1F4ED8]",
+                          }}
+                        />
+                        {notificationState ? (
+                          <StatusBadge value={notificationState} />
+                        ) : null}
+                      </div>
+                      <p className="mt-3 text-sm text-[#4B4B4B]">
+                        {notification.message}
+                      </p>
+                      <div className="mt-3 text-xs text-[#7A7A7A]">
+                        {formatDateTime(notification.createdAt)}
+                      </div>
+                      {notificationTargetLabel ? (
+                        <div className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#0F0F0F]">
+                          {notificationTargetLabel}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {!notification.isRead ? (
+                      <Button
+                        type="button"
+                        variant="soft"
+                        size="sm"
+                        disabled={markReadMutation.isPending}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          markReadMutation.mutate(notification.id);
+                        }}
+                        onKeyDown={(event) => {
+                          event.stopPropagation();
+                        }}
+                      >
+                        Mark as read
+                      </Button>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[#E0E0E0] bg-white p-6 text-sm text-[#4B4B4B]">

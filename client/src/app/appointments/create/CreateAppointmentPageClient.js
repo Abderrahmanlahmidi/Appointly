@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import axios from "../../../../lib/axios";
 import Button from "../../../../components/ui/Button";
 import PageHeader from "../../../../components/ui/PageHeader";
@@ -30,6 +31,7 @@ export default function CreateAppointmentPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const { toast } = useToast();
   const serviceId = parseServiceId(searchParams.get("serviceId"));
   const [selectedAvailabilityId, setSelectedAvailabilityId] = React.useState("");
@@ -111,6 +113,9 @@ export default function CreateAppointmentPage() {
   const backHref = serviceId
     ? `/services/catalog/${serviceId}`
     : "/services/catalog";
+  const currentUserId = Number(session?.user?.id);
+  const isOwnService =
+    currentUserId > 0 && currentUserId === Number(service?.createdBy?.id);
 
   return (
     <div className="min-h-screen bg-white text-[#0F0F0F]">
@@ -155,87 +160,93 @@ export default function CreateAppointmentPage() {
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl border-2 border-[#E0E0E0] bg-white p-6"
-        >
-          <div>
-            <h2 className="text-lg font-semibold">Available slots</h2>
-            <p className="mt-1 text-sm text-[#4B4B4B]">
-              Availability updates in real time, so a slot may become unavailable
-              if someone books it first.
-            </p>
+        {isOwnService ? (
+          <div className="rounded-2xl border-2 border-[#F5C2C0] bg-white p-6 text-sm text-[#B42318]">
+            You cannot create an appointment on your own service.
           </div>
-
-          {availabilitiesLoading ? (
-            <div className="mt-4 rounded-2xl border border-[#E0E0E0] bg-[#FAFAFA] p-4 text-sm text-[#4B4B4B]">
-              Loading available slots...
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-2xl border-2 border-[#E0E0E0] bg-white p-6"
+          >
+            <div>
+              <h2 className="text-lg font-semibold">Available slots</h2>
+              <p className="mt-1 text-sm text-[#4B4B4B]">
+                Availability updates in real time, so a slot may become unavailable
+                if someone books it first.
+              </p>
             </div>
-          ) : availabilitiesError ? (
-            <div className="mt-4 rounded-2xl border border-[#F5C2C0] bg-white p-4 text-sm text-[#B42318]">
-              {availabilitiesQueryError?.response?.data?.message ||
-                "Unable to load available slots."}
-            </div>
-          ) : availabilities.length ? (
-            <div className="mt-4 grid gap-3">
-              {availabilities.map((availability) => {
-                const isSelected =
-                  String(availability.id) === String(selectedAvailabilityId);
 
-                return (
-                  <button
-                    key={availability.id}
-                    type="button"
-                    className={`rounded-2xl border p-4 text-left transition ${
-                      isSelected
-                        ? "border-[#0F0F0F] bg-[#0F0F0F] text-white"
-                        : "border-[#E0E0E0] bg-white text-[#0F0F0F] hover:border-[#0F0F0F]"
-                    }`}
-                    onClick={() => setSelectedAvailabilityId(String(availability.id))}
-                  >
-                    <div className="text-sm font-semibold">
-                      {formatSlot(
-                        availability.date,
-                        availability.startTime,
-                        availability.endTime
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="mt-4 rounded-2xl border border-dashed border-[#E0E0E0] bg-[#FAFAFA] p-4 text-sm text-[#4B4B4B]">
-              No available slots for this service right now.
-            </div>
-          )}
+            {availabilitiesLoading ? (
+              <div className="mt-4 rounded-2xl border border-[#E0E0E0] bg-[#FAFAFA] p-4 text-sm text-[#4B4B4B]">
+                Loading available slots...
+              </div>
+            ) : availabilitiesError ? (
+              <div className="mt-4 rounded-2xl border border-[#F5C2C0] bg-white p-4 text-sm text-[#B42318]">
+                {availabilitiesQueryError?.response?.data?.message ||
+                  "Unable to load available slots."}
+              </div>
+            ) : availabilities.length ? (
+              <div className="mt-4 grid gap-3">
+                {availabilities.map((availability) => {
+                  const isSelected =
+                    String(availability.id) === String(selectedAvailabilityId);
 
-          <div className="mt-6">
-            <label className="text-xs font-medium text-[#2D2D2D]" htmlFor="note">
-              Note for the provider
-            </label>
-            <textarea
-              id="note"
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="Optional note"
-              rows={4}
-              className="mt-2 w-full rounded-xl border-2 border-[#E0E0E0] bg-white p-3 text-sm text-[#0F0F0F] placeholder:text-[#9c9c9c] focus:border-[#0F0F0F] focus:outline-none focus:ring-4 focus:ring-black/10"
-            />
-          </div>
+                  return (
+                    <button
+                      key={availability.id}
+                      type="button"
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        isSelected
+                          ? "border-[#0F0F0F] bg-[#0F0F0F] text-white"
+                          : "border-[#E0E0E0] bg-white text-[#0F0F0F] hover:border-[#0F0F0F]"
+                      }`}
+                      onClick={() => setSelectedAvailabilityId(String(availability.id))}
+                    >
+                      <div className="text-sm font-semibold">
+                        {formatSlot(
+                          availability.date,
+                          availability.startTime,
+                          availability.endTime
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-dashed border-[#E0E0E0] bg-[#FAFAFA] p-4 text-sm text-[#4B4B4B]">
+                No available slots for this service right now.
+              </div>
+            )}
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Button
-              type="submit"
-              disabled={!availabilities.length || createMutation.isPending}
-            >
-              {createMutation.isPending ? "Booking..." : "Book appointment"}
-            </Button>
-            <Button type="button" href={backHref} variant="outline">
-              Cancel
-            </Button>
-          </div>
-        </form>
+            <div className="mt-6">
+              <label className="text-xs font-medium text-[#2D2D2D]" htmlFor="note">
+                Note for the provider
+              </label>
+              <textarea
+                id="note"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Optional note"
+                rows={4}
+                className="mt-2 w-full rounded-xl border-2 border-[#E0E0E0] bg-white p-3 text-sm text-[#0F0F0F] placeholder:text-[#9c9c9c] focus:border-[#0F0F0F] focus:outline-none focus:ring-4 focus:ring-black/10"
+              />
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Button
+                type="submit"
+                disabled={!availabilities.length || createMutation.isPending}
+              >
+                {createMutation.isPending ? "Booking..." : "Book appointment"}
+              </Button>
+              <Button type="button" href={backHref} variant="outline">
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

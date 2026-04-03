@@ -2,10 +2,11 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
 import Alert from "../../ui/Alert";
+import { loginWithCredentials } from "../../../src/app/actions/authActions";
 import {
   Mail,
   Lock,
@@ -18,6 +19,9 @@ import {
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const {
     register,
@@ -33,10 +37,10 @@ export default function LoginForm() {
     setFormAlert(null);
     setLoading(true);
     try {
-      const result = await signIn("credentials", {
-        redirect: false,
+      const result = await loginWithCredentials({
         email: data.email,
         password: data.password,
+        redirectTo: callbackUrl,
       });
 
       if (result?.error) {
@@ -52,15 +56,19 @@ export default function LoginForm() {
           message: "You're now signed in. Redirecting...",
         });
         setTimeout(() => {
-          router.push("/");
+          router.push(callbackUrl);
           router.refresh();
         }, 900);
       }
     } catch (error) {
+      console.error("Credentials sign-in failed with an exception:", error);
       setFormAlert({
         variant: "error",
-        title: "Something went wrong",
-        message: "Please try again in a moment.",
+        title: "Authentication error",
+        message:
+          isDevelopment && error?.message
+            ? error.message
+            : "Please try again in a moment.",
       });
     } finally {
       setLoading(false);
@@ -72,7 +80,7 @@ export default function LoginForm() {
 
     setFormAlert(null);
     setGoogleLoading(true);
-    void signIn("google", { callbackUrl: "/" });
+    void signIn("google", { callbackUrl });
   };
 
   return (

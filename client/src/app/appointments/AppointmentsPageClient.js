@@ -3,6 +3,7 @@
 import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import axios from "../../../lib/axios";
 import Button from "../../../components/ui/Button";
 import DataTable from "../../../components/ui/DataTable";
@@ -17,7 +18,13 @@ const fetchAppointments = async () => {
   return data;
 };
 
+const parseSearchParamId = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
 export default function AppointmentsPageClient() {
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const { toast } = useToast();
@@ -25,6 +32,9 @@ export default function AppointmentsPageClient() {
   const [filteredAppointments, setFilteredAppointments] = React.useState([]);
 
   const role = normalizeRole(session?.user?.role);
+  const highlightedAppointmentId = parseSearchParamId(
+    searchParams.get("appointmentId")
+  );
 
   const {
     data: appointments = [],
@@ -221,10 +231,38 @@ export default function AppointmentsPageClient() {
         ? "Monitor every appointment and intervene when needed."
         : "Track the status of your bookings and cancel when necessary.";
 
+  const visibleAppointments = React.useMemo(() => {
+    if (!highlightedAppointmentId) {
+      return filteredAppointments;
+    }
+
+    const highlightedAppointment = filteredAppointments.find(
+      (appointment) => appointment.id === highlightedAppointmentId
+    );
+
+    if (!highlightedAppointment) {
+      return filteredAppointments;
+    }
+
+    return [
+      highlightedAppointment,
+      ...filteredAppointments.filter(
+        (appointment) => appointment.id !== highlightedAppointmentId
+      ),
+    ];
+  }, [filteredAppointments, highlightedAppointmentId]);
+
   return (
     <div className="min-h-screen bg-white text-[#0F0F0F]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-12">
         <PageHeader title="Appointments" subtitle={subtitle} />
+
+        {highlightedAppointmentId ? (
+          <div className="rounded-2xl border border-[#F7E2B5] bg-[#FFFBEA] p-4 text-sm text-[#7A4B00]">
+            Opened from a notification. The matching appointment is highlighted
+            below when it is available in this list.
+          </div>
+        ) : null}
 
         <SearchInput
           data={appointments}
@@ -255,7 +293,10 @@ export default function AppointmentsPageClient() {
         ) : (
           <DataTable
             columns={columns}
-            data={filteredAppointments}
+            data={visibleAppointments}
+            rowClassName={(appointment) =>
+              appointment.id === highlightedAppointmentId ? "bg-[#FFFBEA]" : ""
+            }
             emptyMessage={
               searchTerm.trim().length
                 ? "No appointments match your search."

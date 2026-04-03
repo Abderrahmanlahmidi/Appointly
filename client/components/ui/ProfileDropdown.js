@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   LogOut,
+  MessageSquare,
   User,
 } from "lucide-react";
 import Button from "./Button";
@@ -86,6 +87,16 @@ export default function ProfileDropdown({ user }) {
               <CalendarCheck2 className="h-4 w-4" />
               Appointments
             </Button>
+            {role !== "ADMIN" ? (
+              <Button
+                href="/messages"
+                variant="soft"
+                className="w-full justify-start gap-3"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Messages
+              </Button>
+            ) : null}
             <Button
               href="/notifications"
               variant="soft"

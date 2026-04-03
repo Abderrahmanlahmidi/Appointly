@@ -3,35 +3,60 @@
 import {
   Activity,
   BarChart3,
+  Briefcase,
+  CalendarClock,
   FileText,
+  FolderKanban,
   LayoutDashboard,
   Settings,
   Shield,
-  SlidersHorizontal,
+  Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Button from "../ui/Button";
+import NotificationBellButton from "../ui/NotificationBellButton";
 import ProfileDropdown from "../ui/ProfileDropdown";
 
-const navItems = [
+const primaryNavItems = [
   {
     href: "/admin/dashboard",
     label: "Overview",
-    description: "Live system health and moderation queues",
+    description: "Summary metrics and quick access",
     icon: LayoutDashboard,
   },
   {
     href: "/admin/analytics",
     label: "Analytics",
-    description: "Demand, funnel, and growth views",
+    description: "Statistics, charts, and trend views",
     icon: BarChart3,
   },
   {
-    href: "/admin/reports",
-    label: "Reports",
-    description: "Exports, compliance, and scheduled packs",
-    icon: FileText,
+    href: "/admin/categories",
+    label: "Categories",
+    description: "Dedicated category moderation table",
+    icon: FolderKanban,
   },
+  {
+    href: "/admin/services",
+    label: "Services",
+    description: "Dedicated service approval queue",
+    icon: Briefcase,
+  },
+  {
+    href: "/admin/appointments",
+    label: "Appointments",
+    description: "Booking oversight and interventions",
+    icon: CalendarClock,
+  },
+  {
+    href: "/admin/users",
+    label: "Users",
+    description: "Accounts and role management",
+    icon: Users,
+  },
+];
+
+const secondaryNavItems = [
   {
     href: "/admin/activity",
     label: "Activity",
@@ -39,10 +64,10 @@ const navItems = [
     icon: Activity,
   },
   {
-    href: "/admin/management",
-    label: "Management",
-    description: "Catalog, support, and admin tooling",
-    icon: SlidersHorizontal,
+    href: "/admin/reports",
+    label: "Reports",
+    description: "Exports, compliance, and scheduled packs",
+    icon: FileText,
   },
   {
     href: "/admin/settings",
@@ -57,6 +82,63 @@ const matchesPath = (pathname, href) =>
 
 export default function AdminShell({ user, children }) {
   const pathname = usePathname();
+  const renderNavItem = (item) => {
+    const isActive = matchesPath(pathname, item.href);
+    const Icon = item.icon;
+
+    return (
+      <Button
+        key={item.href}
+        href={item.href}
+        variant="soft"
+        className={[
+          "w-full justify-start rounded-2xl px-4 py-4 text-left",
+          isActive
+            ? "!border-[#0F0F0F] !bg-[#0F0F0F] !text-white hover:!bg-[#0F0F0F]"
+            : "!border-[#E0E0E0] !bg-white !text-[#0F0F0F] hover:!bg-[#FAFAFA]",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <span className="flex min-w-0 items-start gap-3">
+          <span
+            className={[
+              "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+              isActive
+                ? "bg-white/12 text-white"
+                : "bg-[#FAFAFA] text-[#0F0F0F]",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            <Icon className="h-4 w-4" />
+          </span>
+          <span className="min-w-0">
+            <span
+              className={[
+                "block text-sm font-semibold",
+                isActive ? "!text-white" : "text-[#0F0F0F]",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {item.label}
+            </span>
+            <span
+              className={[
+                "mt-1 block text-xs leading-5",
+                isActive ? "!text-white/72" : "text-[#4B4B4B]",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {item.description}
+            </span>
+          </span>
+        </span>
+      </Button>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#0F0F0F]">
@@ -71,7 +153,10 @@ export default function AdminShell({ user, children }) {
               Platform operations
             </div>
           </div>
-          <ProfileDropdown user={user} />
+          <div className="flex items-center gap-3">
+            <NotificationBellButton userId={user?.id} />
+            <ProfileDropdown user={user} />
+          </div>
         </div>
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(250px,280px)_minmax(0,1fr)]">
@@ -95,63 +180,13 @@ export default function AdminShell({ user, children }) {
                 Workspace
               </div>
               <div className="grid gap-2">
-                {navItems.map((item) => {
-                  const isActive = matchesPath(pathname, item.href);
-                  const Icon = item.icon;
-
-                  return (
-                    <Button
-                      key={item.href}
-                      href={item.href}
-                      variant="soft"
-                      className={[
-                        "w-full justify-start rounded-2xl px-4 py-4 text-left",
-                        isActive
-                          ? "!border-[#0F0F0F] !bg-[#0F0F0F] !text-white hover:!bg-[#0F0F0F]"
-                          : "!border-[#E0E0E0] !bg-white !text-[#0F0F0F] hover:!bg-[#FAFAFA]",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    >
-                      <span className="flex min-w-0 items-start gap-3">
-                        <span
-                          className={[
-                            "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-                            isActive
-                              ? "bg-white/12 text-white"
-                              : "bg-[#FAFAFA] text-[#0F0F0F]",
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                        >
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        <span className="min-w-0">
-                          <span
-                            className={[
-                              "block text-sm font-semibold",
-                              isActive ? "!text-white" : "text-[#0F0F0F]",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                          >
-                            {item.label}
-                          </span>
-                          <span
-                            className={[
-                              "mt-1 block text-xs leading-5",
-                              isActive ? "!text-white/72" : "text-[#4B4B4B]",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                          >
-                            {item.description}
-                          </span>
-                        </span>
-                      </span>
-                    </Button>
-                  );
-                })}
+                {primaryNavItems.map(renderNavItem)}
+              </div>
+              <div className="mb-2 mt-5 px-3 pt-2 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#7A7A7A]">
+                Support
+              </div>
+              <div className="grid gap-2">
+                {secondaryNavItems.map(renderNavItem)}
               </div>
             </nav>
 
@@ -170,8 +205,8 @@ export default function AdminShell({ user, children }) {
                 <div className="rounded-2xl border border-[#E0E0E0] bg-[#FAFAFA] p-4">
                   <div className="text-sm font-semibold">Scalable structure</div>
                   <p className="mt-1 text-xs leading-5 text-[#4B4B4B]">
-                    Static modules are ready for deeper admin tools without
-                    changing the shell or route model.
+                    The sidebar now separates analytics, catalog, bookings, and
+                    users into their own admin pages.
                   </p>
                 </div>
               </div>

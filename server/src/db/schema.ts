@@ -11,6 +11,7 @@ import {
   date,
   time,
   numeric,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import type { AdapterAccount } from '@auth/core/adapters';
@@ -137,6 +138,41 @@ export const chatbotLogs = pgTable('chatbot_logs', {
   ...timestamps,
 });
 
+export const chatConversations = pgTable(
+  'chat_conversations',
+  {
+    id: serial('id').primaryKey(),
+    serviceId: integer('service_id')
+      .references(() => services.id)
+      .notNull(),
+    clientId: integer('client_id')
+      .references(() => users.id)
+      .notNull(),
+    providerId: integer('provider_id')
+      .references(() => users.id)
+      .notNull(),
+    lastMessageAt: timestamp('last_message_at').defaultNow().notNull(),
+    ...timestamps,
+  },
+  (table) => ({
+    serviceClientProviderUnique: uniqueIndex(
+      'chat_conversations_service_client_provider_unique',
+    ).on(table.serviceId, table.clientId, table.providerId),
+  }),
+);
+
+export const chatMessages = pgTable('chat_messages', {
+  id: serial('id').primaryKey(),
+  conversationId: integer('conversation_id')
+    .references(() => chatConversations.id)
+    .notNull(),
+  senderId: integer('sender_id')
+    .references(() => users.id)
+    .notNull(),
+  body: text('body').notNull(),
+  ...timestamps,
+});
+
 export const accounts = pgTable(
   'account',
   {
@@ -191,6 +227,13 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   categories: many(categories),
   services: many(services, { relationName: 'providerServices' }),
   chatbotLogs: many(chatbotLogs),
+  clientChatConversations: many(chatConversations, {
+    relationName: 'clientChatConversations',
+  }),
+  providerChatConversations: many(chatConversations, {
+    relationName: 'providerChatConversations',
+  }),
+  sentChatMessages: many(chatMessages),
 }));
 
 export const categoryRelations = relations(categories, ({ one, many }) => ({
@@ -218,6 +261,7 @@ export const serviceRelations = relations(services, ({ one, many }) => ({
   }),
   availabilities: many(availabilities),
   appointments: many(appointments),
+  chatConversations: many(chatConversations),
 }));
 
 export const availabilityRelations = relations(
@@ -260,5 +304,37 @@ export const notificationRelations = relations(notifications, ({ one }) => ({
   appointment: one(appointments, {
     fields: [notifications.appointmentId],
     references: [appointments.id],
+  }),
+}));
+
+export const chatConversationRelations = relations(
+  chatConversations,
+  ({ one, many }) => ({
+    service: one(services, {
+      fields: [chatConversations.serviceId],
+      references: [services.id],
+    }),
+    client: one(users, {
+      fields: [chatConversations.clientId],
+      references: [users.id],
+      relationName: 'clientChatConversations',
+    }),
+    provider: one(users, {
+      fields: [chatConversations.providerId],
+      references: [users.id],
+      relationName: 'providerChatConversations',
+    }),
+    messages: many(chatMessages),
+  }),
+);
+
+export const chatMessageRelations = relations(chatMessages, ({ one }) => ({
+  conversation: one(chatConversations, {
+    fields: [chatMessages.conversationId],
+    references: [chatConversations.id],
+  }),
+  sender: one(users, {
+    fields: [chatMessages.senderId],
+    references: [users.id],
   }),
 }));

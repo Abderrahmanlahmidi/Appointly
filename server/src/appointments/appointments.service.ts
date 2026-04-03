@@ -190,6 +190,10 @@ export class AppointmentsService {
       throw new BadRequestException('This service is not linked to a provider');
     }
 
+    if (service.providerId === authUser.id) {
+      throw new ForbiddenException('You cannot book your own service');
+    }
+
     const created = await this.db.transaction(async (tx) => {
       const [availability] = await tx
         .select()
