@@ -17,6 +17,25 @@ import { ensureRole, normalizeRoleName } from "./roles";
 const normalizeEmail = (value) =>
   typeof value === "string" ? value.trim().toLowerCase() : "";
 
+const maxSessionImageLength = 2048;
+const sessionImageUrlPattern = /^(https?:\/\/|\/)/i;
+
+const normalizeSessionImage = (value) => {
+  if (typeof value !== "string") return "";
+
+  const image = value.trim();
+
+  if (
+    !image ||
+    image.length > maxSessionImageLength ||
+    !sessionImageUrlPattern.test(image)
+  ) {
+    return "";
+  }
+
+  return image;
+};
+
 const getDbUserWithRole = async ({ idValue, emailValue }) => {
   const userId = Number(idValue);
   const normalizedEmail = normalizeEmail(emailValue);
@@ -164,8 +183,15 @@ export const authOptions = {
         token.email = dbUser.email;
         token.firstName = dbUser.firstName;
         token.lastName = dbUser.lastName;
-        token.image = dbUser.image;
         token.role = normalizeRoleName(dbRole?.name);
+      }
+
+      const sessionImage = normalizeSessionImage(dbUser?.image ?? token.image);
+
+      if (sessionImage) {
+        token.image = sessionImage;
+      } else {
+        delete token.image;
       }
 
       return token;
@@ -181,7 +207,7 @@ export const authOptions = {
         session.user = {
           id: dbUser?.id ?? token.id ?? 0,
           email: dbUser?.email ?? token.email ?? "",
-          image: dbUser?.image ?? token.image ?? "",
+          image: normalizeSessionImage(dbUser?.image ?? token.image),
           firstName: dbUser?.firstName ?? token.firstName ?? "",
           lastName: dbUser?.lastName ?? token.lastName ?? "",
           role: normalizeRoleName(dbRole?.name ?? token.role),

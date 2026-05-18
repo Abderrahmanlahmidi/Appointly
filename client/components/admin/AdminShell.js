@@ -94,8 +94,8 @@ export default function AdminShell({ user, children }) {
         className={[
           "w-full justify-start rounded-2xl px-4 py-4 text-left",
           isActive
-            ? "!border-[#0F0F0F] !bg-[#0F0F0F] !text-white hover:!bg-[#0F0F0F]"
-            : "!border-[#E0E0E0] !bg-white !text-[#0F0F0F] hover:!bg-[#FAFAFA]",
+            ? "!border-[var(--color-border-strong)] !bg-[rgba(255,255,255,0.12)] !text-white hover:!bg-[rgba(255,255,255,0.14)]"
+            : "!border-[var(--color-border)] !bg-[rgba(255,255,255,0.04)] !text-[var(--color-foreground)] hover:!bg-[rgba(255,255,255,0.08)]",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -105,7 +105,7 @@ export default function AdminShell({ user, children }) {
             className={[
               "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
               isActive
-                ? "bg-white/12 text-white"
+                ? "bg-[rgba(255,255,255,0.14)] text-white"
                 : "bg-[#FAFAFA] text-[#0F0F0F]",
             ]
               .filter(Boolean)

@@ -28,7 +28,7 @@ export default function ProfileDropdown({ user }) {
   return (
     <>
       <details className="relative">
-        <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl border-2 border-[#0F0F0F] px-3 py-2 text-sm font-semibold text-[#0F0F0F] transition hover:bg-[#0F0F0F] hover:text-white [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl border-2 border-[var(--color-border)] bg-[rgba(255,255,255,0.05)] px-3 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:bg-[rgba(255,255,255,0.12)] [&::-webkit-details-marker]:hidden">
           <span className="flex items-center gap-2">
             {image ? (
               <Image
@@ -40,7 +40,7 @@ export default function ProfileDropdown({ user }) {
                 unoptimized
               />
             ) : (
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0F0F0F] text-white">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(255,255,255,0.12)] text-white">
                 <User className="h-4 w-4" />
               </span>
             )}
@@ -48,14 +48,14 @@ export default function ProfileDropdown({ user }) {
           <ChevronDown className="h-4 w-4 opacity-70" />
         </summary>
 
-        <div className="absolute right-0 mt-3 w-72 rounded-2xl border border-[#E0E0E0] bg-white p-4 text-left shadow-xl">
-          <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
+        <div className="absolute right-0 mt-3 w-72 rounded-2xl border border-[var(--color-border)] bg-[rgba(8,10,14,0.96)] p-4 text-left shadow-xl">
+          <div className="rounded-xl border border-[var(--color-border-alt)] bg-[rgba(255,255,255,0.05)] p-3">
             <div>
-              <div className="text-sm font-semibold text-[#0F0F0F]">
+              <div className="text-sm font-semibold text-[var(--color-foreground)]">
                 {fullName}
               </div>
               {email ? (
-                <div className="text-xs text-[#4B4B4B]">{email}</div>
+                <div className="text-xs text-[var(--color-muted)]">{email}</div>
               ) : null}
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function ProfileDropdown({ user }) {
             <Button
               type="button"
               variant="outline"
-              className="w-full justify-start gap-3 border-[#EA3A30] text-[#EA3A30] hover:bg-[#EA3A30] hover:text-white"
+              className="w-full justify-start gap-3 border-[rgba(255,32,71,0.24)] text-[#ff95a9] hover:bg-[rgba(255,32,71,0.14)] hover:text-white"
               onClick={() => setShowLogoutConfirm(true)}
             >
               <LogOut className="h-4 w-4" />
@@ -155,7 +155,7 @@ export default function ProfileDropdown({ user }) {
         confirmText="Yes, log me out"
         cancelText="Cancel"
         confirmVariant="outline"
-        confirmClassName="border-[#EA3A30] text-[#EA3A30] hover:bg-[#EA3A30] hover:text-white"
+        confirmClassName="border-[rgba(255,32,71,0.24)] text-[#ff95a9] hover:bg-[rgba(255,32,71,0.14)] hover:text-white"
         onCancel={() => setShowLogoutConfirm(false)}
         onConfirm={() => signOut({ callbackUrl: "/" })}
       />

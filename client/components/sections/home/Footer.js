@@ -20,7 +20,7 @@ export default function HomeFooter() {
         <div className="max-w-md">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"
+            className="inline-flex items-center gap-2 font-[var(--font-display)] text-lg font-semibold tracking-tight"
           >
             <Image
               src="/logo.svg"
@@ -38,7 +38,9 @@ export default function HomeFooter() {
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold text-[#0F0F0F]">Explore</h2>
+          <h2 className="font-[var(--font-display)] text-sm font-semibold text-[#0F0F0F]">
+            Explore
+          </h2>
           <div className="mt-4 grid gap-3 text-sm text-[#4B4B4B]">
             {footerLinks.map((link) => (
               <Link
@@ -53,7 +55,9 @@ export default function HomeFooter() {
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold text-[#0F0F0F]">Account</h2>
+          <h2 className="font-[var(--font-display)] text-sm font-semibold text-[#0F0F0F]">
+            Account
+          </h2>
           <div className="mt-4 grid gap-3 text-sm text-[#4B4B4B]">
             {authLinks.map((link) => (
               <Link

@@ -12,27 +12,27 @@ import {
 const variants = {
   info: {
     icon: Info,
-    border: "border-[#E0E0E0]",
-    background: "bg-[#F6F6F6]",
-    accent: "text-[#0F0F0F]",
+    border: "border-[var(--color-border)]",
+    background: "bg-[rgba(255,255,255,0.05)]",
+    accent: "text-[#96cfff]",
   },
   success: {
     icon: CheckCircle2,
-    border: "border-[#CDE9D5]",
-    background: "bg-[#F1FBF4]",
-    accent: "text-[#037347]",
+    border: "border-[rgba(17,255,153,0.22)]",
+    background: "bg-[rgba(17,255,153,0.1)]",
+    accent: "text-[#8affc7]",
   },
   warning: {
     icon: AlertTriangle,
-    border: "border-[#F6D8A8]",
-    background: "bg-[#FFF7E8]",
-    accent: "text-[#B45309]",
+    border: "border-[rgba(255,197,61,0.24)]",
+    background: "bg-[rgba(255,197,61,0.1)]",
+    accent: "text-[#ffd98a]",
   },
   error: {
     icon: XCircle,
-    border: "border-[#F6C3C0]",
-    background: "bg-[#FFF1F1]",
-    accent: "text-[#EA3A30]",
+    border: "border-[rgba(255,32,71,0.24)]",
+    background: "bg-[rgba(255,32,71,0.1)]",
+    accent: "text-[#ff95a9]",
   },
 };
 
@@ -61,10 +61,14 @@ export default function Alert({
       <Icon className={`mt-0.5 h-4 w-4 ${config.accent}`} />
       <div className="flex-1">
         {title ? (
-          <p className="text-sm font-semibold text-[#0F0F0F]">{title}</p>
+          <p className="text-sm font-semibold text-[var(--color-foreground)]">
+            {title}
+          </p>
         ) : null}
         {message ? (
-          <p className={`text-sm text-[#4B4B4B] ${title ? "mt-1" : ""}`}>
+          <p
+            className={`text-sm text-[var(--color-muted)] ${title ? "mt-1" : ""}`}
+          >
             {message}
           </p>
         ) : null}
@@ -73,7 +77,7 @@ export default function Alert({
         <button
           type="button"
           onClick={onClose}
-          className="text-[#4B4B4B] hover:text-[#0F0F0F]"
+          className="text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
           aria-label="Dismiss alert"
         >
           <X className="h-4 w-4" />

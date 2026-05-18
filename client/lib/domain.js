@@ -60,11 +60,18 @@ export const formatStatusLabel = (value) =>
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
 export const statusToneMap = {
-  PENDING: "border-[#F7E2B5] bg-[#FFF7E6] text-[#9A5B00]",
-  APPROVED: "border-[#BDE5D3] bg-[#F0FBF5] text-[#037347]",
-  REJECTED: "border-[#F5C2C0] bg-[#FFF5F4] text-[#B42318]",
-  ACTIVE: "border-[#BDE5D3] bg-[#F0FBF5] text-[#037347]",
-  INACTIVE: "border-[#E0E0E0] bg-[#F7F7F7] text-[#4B4B4B]",
-  CONFIRMED: "border-[#BDE5D3] bg-[#F0FBF5] text-[#037347]",
-  CANCELLED: "border-[#F5C2C0] bg-[#FFF5F4] text-[#B42318]",
+  PENDING:
+    "border-[rgba(255,197,61,0.24)] bg-[rgba(255,197,61,0.1)] text-[#ffd98a]",
+  APPROVED:
+    "border-[rgba(17,255,153,0.22)] bg-[rgba(17,255,153,0.1)] text-[#8affc7]",
+  REJECTED:
+    "border-[rgba(255,32,71,0.24)] bg-[rgba(255,32,71,0.1)] text-[#ff95a9]",
+  ACTIVE:
+    "border-[rgba(17,255,153,0.22)] bg-[rgba(17,255,153,0.1)] text-[#8affc7]",
+  INACTIVE:
+    "border-[var(--color-border)] bg-[rgba(255,255,255,0.05)] text-[var(--color-muted)]",
+  CONFIRMED:
+    "border-[rgba(17,255,153,0.22)] bg-[rgba(17,255,153,0.1)] text-[#8affc7]",
+  CANCELLED:
+    "border-[rgba(255,32,71,0.24)] bg-[rgba(255,32,71,0.1)] text-[#ff95a9]",
 };

@@ -22,7 +22,10 @@ export default function PageHeader({
       <div>
         {title ? (
           <h1
-            className={["text-2xl font-semibold", titleClassName]
+            className={[
+              "font-[var(--font-display)] text-2xl font-semibold tracking-tight text-[var(--color-foreground)]",
+              titleClassName,
+            ]
               .filter(Boolean)
               .join(" ")}
           >
@@ -31,7 +34,10 @@ export default function PageHeader({
         ) : null}
         {subtitle ? (
           <p
-            className={["text-sm text-[#4B4B4B]", subtitleClassName]
+            className={[
+              "text-sm text-[var(--color-muted)]",
+              subtitleClassName,
+            ]
               .filter(Boolean)
               .join(" ")}
           >

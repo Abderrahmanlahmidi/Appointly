@@ -22,7 +22,7 @@ export default function DataTable({
     return (
       <div
         className={[
-          "rounded-2xl border border-dashed border-[#E0E0E0] bg-white p-6 text-sm text-[#4B4B4B]",
+          "rounded-2xl border border-dashed border-[var(--color-border)] bg-[rgba(255,255,255,0.04)] p-6 text-sm text-[var(--color-muted)]",
           emptyClassName,
         ]
           .filter(Boolean)
@@ -44,7 +44,7 @@ export default function DataTable({
   return (
     <div
       className={[
-        "min-w-0 max-w-full overflow-hidden rounded-2xl border border-[#E0E0E0] bg-white",
+        "min-w-0 max-w-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(8,10,14,0.92)]",
         wrapperClassName,
       ]
         .filter(Boolean)
@@ -52,14 +52,14 @@ export default function DataTable({
     >
       <div className="w-full overflow-x-auto">
         <table className={["min-w-full text-sm", tableClassName].join(" ")}>
-          <thead className="bg-[#FAFAFA]">
+          <thead className="bg-[rgba(255,255,255,0.05)]">
             <tr className={headerRowClassName}>
               {columns.map((column, index) => (
                 <th
                   key={column.key ?? index}
                   scope="col"
                   className={[
-                    "px-4 py-3 text-left text-xs font-semibold text-[#4B4B4B]",
+                    "px-4 py-3 text-left text-xs font-semibold text-[var(--color-muted)]",
                     column.headerClassName,
                   ]
                     .filter(Boolean)
@@ -75,7 +75,7 @@ export default function DataTable({
               <tr
                 key={getRowKey(row, rowIndex)}
                 className={[
-                  "border-t border-[#EDEDED]",
+                  "border-t border-[var(--color-border-alt)]",
                   resolveClassName(rowClassName, row, rowIndex),
                 ]
                   .filter(Boolean)
@@ -91,7 +91,7 @@ export default function DataTable({
                     <td
                       key={column.key ?? columnIndex}
                       className={[
-                        "px-4 py-4 align-top text-sm text-[#0F0F0F] whitespace-normal break-words",
+                        "px-4 py-4 align-top text-sm text-[var(--color-foreground)] whitespace-normal break-words",
                         cellClassName,
                         resolveClassName(column.className, row, rowIndex),
                       ]

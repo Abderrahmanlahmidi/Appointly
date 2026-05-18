@@ -21,7 +21,7 @@ const buildDefaultValues = (fields, defaults) => {
 };
 
 const baseSelectClassName =
-  "w-full rounded-xl border-2 border-[#E0E0E0] bg-white px-4 py-3 pr-9 text-sm text-[#0F0F0F] focus:border-[#0F0F0F] focus:outline-none focus:ring-4 focus:ring-black/10";
+  "w-full rounded-xl border-2 border-[var(--color-border)] bg-[rgba(255,255,255,0.05)] px-4 py-3 pr-9 text-sm text-[var(--color-foreground)] focus:border-[var(--color-border-strong)] focus:outline-none focus:ring-4 focus:ring-black/20";
 
 export default function OverlayForm({
   mode = "create",
@@ -106,7 +106,7 @@ export default function OverlayForm({
   return createPortal(
     <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/70"
         onClick={onCancel}
         aria-hidden="true"
       />
@@ -115,19 +115,19 @@ export default function OverlayForm({
           role="dialog"
           aria-modal="true"
           className={[
-            "w-full max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain rounded-2xl border border-[#E0E0E0] bg-white p-6 shadow-xl",
+            "w-full max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain rounded-2xl border border-[var(--color-border)] bg-[rgba(8,10,14,0.96)] p-6 shadow-xl",
             cardClassName,
           ]
             .filter(Boolean)
             .join(" ")}
         >
           {resolvedTitle ? (
-            <h2 className="text-lg font-semibold text-[#0F0F0F]">
+            <h2 className="font-[var(--font-display)] text-lg font-semibold text-[var(--color-foreground)]">
               {resolvedTitle}
             </h2>
           ) : null}
           {description ? (
-            <p className="mt-2 text-sm text-[#4B4B4B]">{description}</p>
+            <p className="mt-2 text-sm text-[var(--color-muted)]">{description}</p>
           ) : null}
 
           <form
@@ -146,7 +146,7 @@ export default function OverlayForm({
                   {field.label ? (
                     <label
                       htmlFor={fieldId}
-                      className="text-xs font-medium text-[#2D2D2D]"
+                      className="text-xs font-medium text-[var(--color-muted)]"
                     >
                       {field.label}
                     </label>
@@ -206,7 +206,7 @@ export default function OverlayForm({
                     />
                   )}
                   {errors?.[field.name] ? (
-                    <p className="mt-2 text-xs text-[#EA3A30]">
+                    <p className="mt-2 text-xs text-[#ff95a9]">
                       {errors[field.name].message}
                     </p>
                   ) : null}

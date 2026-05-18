@@ -4,7 +4,7 @@ import React from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 const baseInput =
-  "w-full rounded-xl border-2 border-[#E0E0E0] bg-white py-3 text-sm text-[#0F0F0F] placeholder:text-[#9c9c9c] focus:border-[#0F0F0F] focus:outline-none focus:ring-4 focus:ring-black/10";
+  "w-full rounded-xl border-2 border-[var(--color-border)] bg-[rgba(255,255,255,0.05)] py-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-muted)] focus:border-[var(--color-border-strong)] focus:outline-none focus:ring-4 focus:ring-black/20";
 
 const Input = React.forwardRef(function Input(
   {
@@ -25,7 +25,7 @@ const Input = React.forwardRef(function Input(
   return (
     <div className={`relative ${className}`.trim()}>
       {Icon ? (
-        <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4B4B4B]" />
+        <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]" />
       ) : null}
       <input
         ref={ref}
@@ -39,7 +39,7 @@ const Input = React.forwardRef(function Input(
         <button
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4B4B4B]"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)] transition hover:text-[var(--color-foreground)]"
           aria-label={showPassword ? "Hide password" : "Show password"}
         >
           {showPassword ? (

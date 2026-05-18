@@ -15,7 +15,7 @@ export default function HomeNavbar({ session }) {
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         <Link
           href="/"
-          className="flex items-center gap-2 text-lg font-semibold tracking-tight"
+          className="flex items-center gap-2 font-[var(--font-display)] text-lg font-semibold tracking-tight"
         >
           <Image
             src="/logo.svg"
@@ -28,7 +28,7 @@ export default function HomeNavbar({ session }) {
           Appointly
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm text-[#4B4B4B] md:flex">
+        <nav className="hidden items-center gap-6 font-[var(--font-display)] text-sm tracking-[0.35px] text-[#4B4B4B] md:flex">
           <Link href="/services/catalog" className="transition hover:text-[#0F0F0F]">
             Services
           </Link>

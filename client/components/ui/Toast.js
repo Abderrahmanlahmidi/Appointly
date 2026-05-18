@@ -14,29 +14,29 @@ const ToastMessage = ({ message, type = "info", onDismiss }) => {
     switch (type) {
       case "error":
         return {
-          className: `${baseClasses} text-[#EA3A30] bg-[#FFF5F4] border-[#F5C2C0]`,
-          icon: <AlertCircle className="shrink-0 h-5 w-5 text-[#EA3A30]" />,
-          buttonClass: "text-[#EA3A30]",
+          className: `${baseClasses} text-[#ff95a9] bg-[rgba(255,32,71,0.1)] border-[rgba(255,32,71,0.24)]`,
+          icon: <AlertCircle className="shrink-0 h-5 w-5 text-[#ff95a9]" />,
+          buttonClass: "text-[#ff95a9]",
         };
       case "success":
         return {
-          className: `${baseClasses} text-[#037347] bg-[#F0FBF5] border-[#BDE5D3]`,
-          icon: <CheckCircle2 className="shrink-0 h-5 w-5 text-[#037347]" />,
-          buttonClass: "text-[#037347]",
+          className: `${baseClasses} text-[#8affc7] bg-[rgba(17,255,153,0.1)] border-[rgba(17,255,153,0.22)]`,
+          icon: <CheckCircle2 className="shrink-0 h-5 w-5 text-[#8affc7]" />,
+          buttonClass: "text-[#8affc7]",
         };
       case "warning":
         return {
-          className: `${baseClasses} text-[#9A5B00] bg-[#FFF7E6] border-[#F7E2B5]`,
+          className: `${baseClasses} text-[#ffd98a] bg-[rgba(255,197,61,0.1)] border-[rgba(255,197,61,0.24)]`,
           icon: (
-            <AlertTriangle className="shrink-0 h-5 w-5 text-[#9A5B00]" />
+            <AlertTriangle className="shrink-0 h-5 w-5 text-[#ffd98a]" />
           ),
-          buttonClass: "text-[#9A5B00]",
+          buttonClass: "text-[#ffd98a]",
         };
       default:
         return {
-          className: `${baseClasses} text-[#1F4ED8] bg-[#EEF4FF] border-[#CFE2FF]`,
-          icon: <Info className="shrink-0 h-5 w-5 text-[#1F4ED8]" />,
-          buttonClass: "text-[#1F4ED8]",
+          className: `${baseClasses} text-[#96cfff] bg-[rgba(59,158,255,0.1)] border-[rgba(59,158,255,0.24)]`,
+          icon: <Info className="shrink-0 h-5 w-5 text-[#96cfff]" />,
+          buttonClass: "text-[#96cfff]",
         };
     }
   };
@@ -52,11 +52,13 @@ const ToastMessage = ({ message, type = "info", onDismiss }) => {
       className={styles.className}
       role="alert"
     >
-      <div className="flex w-full items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {styles.icon}
-          <div className="text-sm font-medium text-[#0F0F0F]">{message}</div>
-        </div>
+        <div className="flex w-full items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {styles.icon}
+          <div className="text-sm font-medium text-[var(--color-foreground)]">
+            {message}
+          </div>
+          </div>
         <button
           type="button"
           className={`ml-4 inline-flex h-7 w-7 items-center justify-center rounded-lg p-1.5 ${styles.buttonClass}`}

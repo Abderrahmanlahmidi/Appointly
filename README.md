@@ -28,7 +28,7 @@ Each app runs in its own Node.js process, so each app needs its own `.env` file.
 - `PORT`
   Needed so Nest knows which port to listen on. It is used in [server/src/main.ts](/Users/mac/Desktop/folders/projects/Appointly/server/src/main.ts#L15).
 - `FRONT_END_URL`
-  Needed for CORS so the API accepts requests from the Next.js app. It is used in [server/src/main.ts](/Users/mac/Desktop/folders/projects/Appointly/server/src/main.ts#L10).
+  Needed for CORS so the API accepts requests from the Next.js app. It is used in [server/src/main.ts](/Users/mac/Desktop/folders/projects/Appointly/server/src/main.ts#L10) and can contain a comma-separated list of allowed origins.
 - `DATABASE_URL`
   Needed because the Nest API also connects directly to PostgreSQL through Drizzle. It is used in [server/src/db/db.ts](/Users/mac/Desktop/folders/projects/Appointly/server/src/db/db.ts#L8) and [server/drizzle.config.ts](/Users/mac/Desktop/folders/projects/Appointly/server/drizzle.config.ts#L8).
 

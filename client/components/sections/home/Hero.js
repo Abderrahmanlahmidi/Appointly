@@ -37,11 +37,11 @@ const timeline = [
 
 export default function HomeHero() {
   return (
-    <section className="relative overflow-hidden border-b border-[#E0E0E0] bg-white">
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(250,250,250,0.96)_100%)]" />
-      <div className="absolute inset-y-0 left-0 w-[58%] bg-[radial-gradient(circle_at_top_left,rgba(245,245,245,0.95)_0%,rgba(255,255,255,0)_68%)]" />
-      <div className="absolute inset-y-0 right-0 w-[44%] bg-[radial-gradient(circle_at_center,rgba(240,240,240,0.75)_0%,rgba(255,255,255,0)_72%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(248,248,248,0.95)_100%)]" />
+    <section className="relative overflow-hidden border-b border-[#E0E0E0] bg-black">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,1)_0%,rgba(6,8,11,0.98)_100%)]" />
+      <div className="absolute inset-y-0 left-0 w-[58%] bg-[radial-gradient(circle_at_top_left,rgba(255,128,31,0.14)_0%,rgba(0,0,0,0)_68%)]" />
+      <div className="absolute inset-y-0 right-0 w-[44%] bg-[radial-gradient(circle_at_center,rgba(59,158,255,0.14)_0%,rgba(0,0,0,0)_72%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.92)_100%)]" />
 
       <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-10 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-20">
         <div>
@@ -50,7 +50,7 @@ export default function HomeHero() {
             Appointment management for modern service teams
           </div>
 
-          <h1 className="mt-5 max-w-2xl font-[var(--font-display)] text-4xl font-semibold tracking-tight text-[#0F0F0F] md:text-5xl lg:text-6xl">
+          <h1 className="mt-5 max-w-2xl font-[var(--font-serif)] text-4xl font-normal tracking-tight text-[#0F0F0F] md:text-5xl lg:text-6xl">
             Replace scheduling chaos with one clear booking workspace.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-[#4B4B4B] md:text-lg">

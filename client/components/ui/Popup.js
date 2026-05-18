@@ -36,20 +36,22 @@ export default function Popup({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/70"
         onClick={onCancel}
         aria-hidden="true"
       />
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-md rounded-2xl border border-[#E0E0E0] bg-white p-6 shadow-xl"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[rgba(8,10,14,0.96)] p-6 shadow-xl"
       >
         {title ? (
-          <h2 className="text-lg font-semibold text-[#0F0F0F]">{title}</h2>
+          <h2 className="font-[var(--font-display)] text-lg font-semibold text-[var(--color-foreground)]">
+            {title}
+          </h2>
         ) : null}
         {description ? (
-          <p className="mt-2 text-sm text-[#4B4B4B]">{description}</p>
+          <p className="mt-2 text-sm text-[var(--color-muted)]">{description}</p>
         ) : null}
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

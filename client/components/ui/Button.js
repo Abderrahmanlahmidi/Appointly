@@ -7,12 +7,12 @@ const baseStyles =
 
 const variants = {
   primary:
-    "bg-[#0F0F0F] text-white hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
+    "bg-[var(--color-white)] text-black hover:-translate-y-0.5 hover:bg-[var(--color-muted-strong)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
   outline:
-    "border-2  border-[#0F0F0F] text-[#0F0F0F] hover:bg-[#0F0F0F] hover:text-white",
+    "border-2 border-[var(--color-border)] text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.12)] hover:text-[var(--color-foreground)]",
   soft:
-    "border-2  border-[#E0E0E0] bg-white text-[#0F0F0F] hover:bg-[#F6F6F6]",
-  link: "text-[#0F0F0F] underline underline-offset-4",
+    "border-2 border-[var(--color-border)] bg-[rgba(255,255,255,0.05)] text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.1)]",
+  link: "text-[var(--color-muted)] underline underline-offset-4 hover:text-[var(--color-foreground)]",
 };
 
 const sizes = {

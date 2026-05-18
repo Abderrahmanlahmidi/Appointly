@@ -6,7 +6,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className="antialiased font-[var(--font-sans)] text-[#0F0F0F]"
+        className="bg-black font-[var(--font-sans)] antialiased text-[var(--color-foreground)]"
       >
         <Providers>{children}</Providers>
       </body>

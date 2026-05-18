@@ -31,18 +31,18 @@ export default function Loading({
     variant === "dots" ? (
       <div className="flex items-center gap-1">
         <span
-          className={`inline-block ${dotSize} animate-bounce rounded-full bg-[#0F0F0F] [animation-delay:-0.2s]`}
+          className={`inline-block ${dotSize} animate-bounce rounded-full bg-[var(--color-orange-10)] [animation-delay:-0.2s]`}
         />
         <span
-          className={`inline-block ${dotSize} animate-bounce rounded-full bg-[#0F0F0F] [animation-delay:-0.1s]`}
+          className={`inline-block ${dotSize} animate-bounce rounded-full bg-[var(--color-blue-10)] [animation-delay:-0.1s]`}
         />
         <span
-          className={`inline-block ${dotSize} animate-bounce rounded-full bg-[#0F0F0F]`}
+          className={`inline-block ${dotSize} animate-bounce rounded-full bg-[var(--color-green-4)]`}
         />
       </div>
     ) : (
       <span
-        className={`inline-block ${spinnerSize} animate-spin rounded-full border-2 border-[#E0E0E0] border-t-[#0F0F0F]`}
+        className={`inline-block ${spinnerSize} animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-foreground)]`}
       />
     );
 
@@ -52,7 +52,7 @@ export default function Loading({
       aria-live="polite"
       className={[
         inline ? "inline-flex" : "flex",
-        "items-center gap-2 text-sm text-[#4B4B4B]",
+        "items-center gap-2 text-sm text-[var(--color-muted)]",
         className,
       ]
         .filter(Boolean)
